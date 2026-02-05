@@ -1,7 +1,8 @@
 # Better GCS Explorer
 
-![Version](https://img.shields.io/badge/version-v1.0.0-blue)
+![Version](https://img.shields.io/badge/version-v1.1.0-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
+[![Download DMG](https://img.shields.io/badge/Download-DMG-blue?logo=apple)](https://github.com/akiyamasho/better-gcs-explorer/releases/download/untagged-af0952ba3080c6c6b81e/Better.GCS.Explorer-1.1.0-arm64.dmg)
 
 Local-only Electron app for browsing Google Cloud Storage with a Finder-like UI.
 
@@ -14,6 +15,10 @@ Local-only Electron app for browsing Google Cloud Storage with a Finder-like UI.
 - Go to path (Cmd/Ctrl+Shift+P) modal for direct navigation.
 - Context menu actions: copy paths and gsutil commands.
 - Drag-and-drop upload and drag-out download.
+- Batch selection bar with download/delete actions and select-all toggle.
+- Per-row download button and file-only delete actions.
+- Quick Open keyboard navigation (up/down + enter).
+- Create-folder action in empty-space context menu.
 
 ## Prereqs
 - Node.js (18+)
