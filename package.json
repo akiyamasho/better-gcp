@@ -31,7 +31,6 @@
   "build": {
     "appId": "com.local.bettergcs",
     "productName": "Better GCS Explorer",
-    "publish": "never",
     "directories": {
       "app": "dist-app"
     },
