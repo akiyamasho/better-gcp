@@ -20,14 +20,19 @@ jobs:
         with:
           node-version: 20
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Install
-        run: npm install
+        run: pnpm install
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Package
-        run: npm run package
+        run: pnpm run package
 
       - name: Archive source
         run: git archive -o dist/source.zip HEAD
