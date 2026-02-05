@@ -36,13 +36,15 @@ const main = async () => {
     version: pkg.version,
     private: true,
     main: pkg.main,
+    description: pkg.description,
+    author: pkg.author,
     dependencies: pkg.dependencies,
   };
 
   await fs.writeFile(path.join(stage, 'package.json'), `${JSON.stringify(appPkg, null, 2)}\n`);
 
   await run('npm', ['install', '--omit=dev', '--no-audit', '--no-fund'], { cwd: stage });
-  await run('pnpm', ['exec', 'electron-builder', '--mac'], { cwd: root });
+  await run('pnpm', ['exec', 'electron-builder', '--mac', '--publish', 'never'], { cwd: root });
 };
 
 main().catch((err) => {
