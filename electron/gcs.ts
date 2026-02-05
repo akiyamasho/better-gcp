@@ -77,6 +77,24 @@ export const downloadPrefix = async (bucket: string, prefix: string, destination
   }
 };
 
+export const downloadObjectsToDir = async (
+  bucket: string,
+  names: string[],
+  destinationDir: string,
+  basePrefix?: string
+) => {
+  const normalizedBase = normalizePrefix(basePrefix);
+  for (const name of names) {
+    if (!name) continue;
+    const relative = normalizedBase && name.startsWith(normalizedBase)
+      ? name.slice(normalizedBase.length)
+      : path.basename(name);
+    const safeRelative = relative.replace(/^[/\\]+/, '');
+    const destinationPath = path.join(destinationDir, safeRelative);
+    await downloadObjectToPath(bucket, name, destinationPath);
+  }
+};
+
 export const downloadToTemp = async (bucket: string, name: string) => {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'better-gcs-'));
   const fileName = path.basename(name);
@@ -127,4 +145,13 @@ export const deleteObjects = async (bucket: string, names: string[]) => {
   for (const name of names) {
     await bucketRef.file(name).delete({ ignoreNotFound: true });
   }
+};
+
+export const createFolder = async (bucket: string, prefix: string, name: string) => {
+  const bucketRef = storage.bucket(bucket);
+  const normalizedPrefix = normalizePrefix(prefix);
+  const trimmed = name.trim().replace(/^\/+|\/+$/g, '');
+  if (!trimmed) throw new Error('Folder name is required');
+  const folderPath = `${normalizedPrefix}${trimmed}/`;
+  await bucketRef.file(folderPath).save('');
 };

@@ -33,6 +33,8 @@ jobs:
 
       - name: Package
         run: pnpm run package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Archive source
         run: git archive -o dist/source.zip HEAD
@@ -41,6 +43,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/*.dmg
-            dist/*-mac.zip
             dist/source.zip

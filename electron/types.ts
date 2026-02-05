@@ -31,6 +31,12 @@ export type DownloadRequest = {
   isPrefix?: boolean;
 };
 
+export type DownloadManyRequest = {
+  bucket: string;
+  names: string[];
+  basePrefix?: string;
+};
+
 export type UploadRequest = {
   bucket: string;
   prefix?: string;
@@ -45,4 +51,10 @@ export type StartDragRequest = {
 export type DeleteRequest = {
   bucket: string;
   names: string[];
+};
+
+export type CreateFolderRequest = {
+  bucket: string;
+  prefix: string;
+  name: string;
 };

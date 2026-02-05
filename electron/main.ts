@@ -1,10 +1,12 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeImage } from 'electron';
 import path from 'node:path';
 import {
+  deleteObjects,
   downloadObjectToPath,
+  downloadObjectsToDir,
   downloadPrefix,
   downloadToTemp,
-  deleteObjects,
+  createFolder,
   listBuckets,
   listObjects,
   uploadPaths,
@@ -80,6 +82,26 @@ ipcMain.handle('gcs:download', async (_event, req) => {
   }
 });
 
+ipcMain.handle('gcs:download-many', async (_event, req) => {
+  try {
+    const { bucket, names, basePrefix } = req as {
+      bucket: string;
+      names: string[];
+      basePrefix?: string;
+    };
+    if (!bucket || !names?.length) return { canceled: true, error: 'No files selected' };
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory'],
+      title: 'Select a folder to download into',
+    });
+    if (result.canceled || result.filePaths.length === 0) return { canceled: true };
+    await downloadObjectsToDir(bucket, names, result.filePaths[0], basePrefix);
+    return { canceled: false };
+  } catch (err) {
+    return { canceled: true, error: String(err) };
+  }
+});
+
 ipcMain.handle('gcs:choose-upload', async () => {
   const result = await dialog.showOpenDialog({
     properties: ['openFile', 'openDirectory', 'multiSelections'],
@@ -102,6 +124,17 @@ ipcMain.handle('gcs:delete', async (_event, req) => {
     const { bucket, names } = req as { bucket: string; names: string[] };
     if (!bucket || !names?.length) return { ok: false, error: 'No files selected' };
     await deleteObjects(bucket, names);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('gcs:create-folder', async (_event, req) => {
+  try {
+    const { bucket, prefix, name } = req as { bucket: string; prefix: string; name: string };
+    if (!bucket) return { ok: false, error: 'Missing bucket' };
+    await createFolder(bucket, prefix ?? '', name ?? '');
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };

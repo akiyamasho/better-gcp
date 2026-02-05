@@ -1,7 +1,7 @@
 {
   "name": "better-gcs",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Local-only Electron app for browsing Google Cloud Storage with a Finder-like UI.",
   "author": "Sho Akiyama (秋山翔)",
   "main": "dist-electron/main.js",

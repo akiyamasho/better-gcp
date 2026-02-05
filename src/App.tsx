@@ -152,6 +152,7 @@ const App = () => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const pathInputRef = useRef<HTMLInputElement>(null);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setFavoriteBuckets(readStoredList(FAVORITES_STORAGE_KEY));
@@ -470,6 +471,18 @@ const App = () => {
     });
   }, [listing, currentPrefix]);
 
+  const fileNames = useMemo(
+    () => items.filter((item) => item.type === 'file').map((item) => item.name),
+    [items]
+  );
+  const allSelected = fileNames.length > 0 && fileNames.every((name) => selectedFiles.has(name));
+  const someSelected = fileNames.some((name) => selectedFiles.has(name)) && !allSelected;
+
+  useEffect(() => {
+    if (!selectAllRef.current) return;
+    selectAllRef.current.indeterminate = someSelected;
+  }, [someSelected]);
+
   useEffect(() => {
     setSelectedFiles(new Set());
   }, [currentBucket, currentPrefix]);
@@ -579,11 +592,36 @@ const App = () => {
         action: () => copyText(gsPath),
       },
       {
+        label: 'Create folder...',
+        action: () => handleCreateFolder(),
+      },
+      {
         label: 'Upload files or folders...',
         action: () => handleChooseUpload(),
       },
     ];
     setContextMenu({ x: event.clientX, y: event.clientY, items });
+  };
+
+  const handleCreateFolder = async () => {
+    if (!currentBucket) return;
+    const name = window.prompt('Folder name');
+    if (!name) return;
+    const result = await window.gcs.createFolder({
+      bucket: currentBucket,
+      prefix: currentPrefix,
+      name,
+    });
+    if (!result.ok) {
+      setError(result.error ?? 'Create folder failed');
+      return;
+    }
+    const data = await window.gcs.listObjects({
+      bucket: currentBucket,
+      prefix: currentPrefix,
+      delimiter: '/',
+    });
+    setListing(data);
   };
 
   const handleDownload = async (item: Item) => {
@@ -599,6 +637,25 @@ const App = () => {
     }
     if (!result.canceled) {
       setStatus('Download complete');
+      setTimeout(() => setStatus(''), 1500);
+    } else {
+      setStatus('');
+    }
+  };
+
+  const handleBatchDownload = async (names: string[]) => {
+    if (!currentBucket || names.length === 0) return;
+    setStatus('Preparing downloads...');
+    const result = await window.gcs.downloadMany({
+      bucket: currentBucket,
+      names,
+      basePrefix: currentPrefix,
+    });
+    if ('error' in result && result.error) {
+      setError(result.error);
+    }
+    if (!result.canceled) {
+      setStatus('Downloads complete');
       setTimeout(() => setStatus(''), 1500);
     } else {
       setStatus('');
@@ -921,8 +978,39 @@ const App = () => {
           onDragLeave={() => setIsDraggingOver(false)}
           onDrop={(event) => handleDrop(event)}
         >
+          {selectedFiles.size > 0 ? (
+            <div className="batch-bar">
+              <span>{selectedFiles.size} selected</span>
+              <div className="batch-actions">
+                <button
+                  className="secondary-button"
+                  onClick={() => handleBatchDownload(Array.from(selectedFiles))}
+                >
+                  Download
+                </button>
+                <button className="danger-button" onClick={() => handleDelete(Array.from(selectedFiles))}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          ) : null}
           <div className="list-header">
             <div className="col-name">
+              <input
+                ref={selectAllRef}
+                className="row-check"
+                type="checkbox"
+                checked={allSelected}
+                onChange={(event) => {
+                  event.stopPropagation();
+                  if (event.target.checked) {
+                    setSelectedFiles(new Set(fileNames));
+                  } else {
+                    setSelectedFiles(new Set());
+                  }
+                }}
+                onClick={(event) => event.stopPropagation()}
+              />
               <span className="col-check">Select</span>
               <span>Name</span>
             </div>
@@ -1030,11 +1118,6 @@ const App = () => {
             )}
           </div>
           <div className="status-right">
-            {selectedFiles.size > 0 ? (
-              <button className="danger-button" onClick={() => handleDelete(Array.from(selectedFiles))}>
-                Delete {selectedFiles.size}
-              </button>
-            ) : null}
             <span>{status || error}</span>
           </div>
         </footer>
