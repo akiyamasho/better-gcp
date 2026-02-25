@@ -24,6 +24,14 @@ type TreeExpandState = {
 };
 
 const FAVORITES_KEY = 'better-gcp:bq-favorites';
+const FAV_PROJECTS_KEY = 'better-gcp:bq-fav-projects';
+const EXTRA_PROJECTS_KEY = 'better-gcp:bq-extra-projects';
+
+type ContextMenuState = {
+  x: number;
+  y: number;
+  items: { label: string; action: () => void }[];
+};
 
 const formatBytes = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
@@ -37,9 +45,9 @@ const formatBytes = (bytes: number) => {
   return `${value.toFixed(value < 10 ? 1 : 0)} ${units[idx]}`;
 };
 
-const readFavorites = (): string[] => {
+const readStringList = (key: string): string[] => {
   try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter((v) => typeof v === 'string') : [];
@@ -48,9 +56,9 @@ const readFavorites = (): string[] => {
   }
 };
 
-const writeFavorites = (favorites: string[]) => {
+const writeStringList = (key: string, values: string[]) => {
   try {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    localStorage.setItem(key, JSON.stringify(values));
   } catch {
     // Ignore storage errors.
   }
@@ -64,7 +72,12 @@ const BigQueryTab = () => {
   const [tables, setTables] = useState<Record<string, BqTable[]>>({});
   const [expanded, setExpanded] = useState<TreeExpandState>({ projects: {}, datasets: {} });
   const [treeLoading, setTreeLoading] = useState<Record<string, boolean>>({});
-  const [favorites, setFavorites] = useState<string[]>(readFavorites);
+  const [favorites, setFavorites] = useState<string[]>(() => readStringList(FAVORITES_KEY));
+  const [favProjects, setFavProjects] = useState<string[]>(() => readStringList(FAV_PROJECTS_KEY));
+  const [extraProjects, setExtraProjects] = useState<string[]>(() => readStringList(EXTRA_PROJECTS_KEY));
+  const [showAddProject, setShowAddProject] = useState(false);
+  const [newProjectId, setNewProjectId] = useState('');
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [preview, setPreview] = useState<BqTablePreview | null>(null);
   const [previewTarget, setPreviewTarget] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -91,8 +104,17 @@ const BigQueryTab = () => {
 
   useEffect(() => {
     window.bq.listProjects().then((res) => {
-      if (res.ok) setProjects(res.data);
-      else setError(res.error);
+      if (res.ok) {
+        const detected = res.data;
+        const extraIds = readStringList(EXTRA_PROJECTS_KEY);
+        const existingIds = new Set(detected.map((p) => p.id));
+        const extras = extraIds
+          .filter((id) => !existingIds.has(id))
+          .map((id) => ({ id, name: id }));
+        setProjects([...detected, ...extras]);
+      } else {
+        setError(res.error);
+      }
     });
     window.bq.loadSavedQueries().then((res) => {
       if (res.ok) setSavedQueries(res.data);
@@ -100,8 +122,16 @@ const BigQueryTab = () => {
   }, []);
 
   useEffect(() => {
-    writeFavorites(favorites);
+    writeStringList(FAVORITES_KEY, favorites);
   }, [favorites]);
+
+  useEffect(() => {
+    writeStringList(FAV_PROJECTS_KEY, favProjects);
+  }, [favProjects]);
+
+  useEffect(() => {
+    writeStringList(EXTRA_PROJECTS_KEY, extraProjects);
+  }, [extraProjects]);
 
   const toggleProjectExpand = useCallback(async (projectId: string) => {
     setExpanded((prev) => {
@@ -240,6 +270,117 @@ const BigQueryTab = () => {
     [handlePreviewTable]
   );
 
+  const toggleFavProject = useCallback((projectId: string) => {
+    setFavProjects((prev) =>
+      prev.includes(projectId) ? prev.filter((p) => p !== projectId) : [...prev, projectId]
+    );
+  }, []);
+
+  const handleAddProject = useCallback(() => {
+    const trimmed = newProjectId.trim();
+    if (!trimmed) return;
+    if (projects.some((p) => p.id === trimmed)) {
+      setShowAddProject(false);
+      setNewProjectId('');
+      return;
+    }
+    setProjects((prev) => [...prev, { id: trimmed, name: trimmed }]);
+    setExtraProjects((prev) => [...prev, trimmed]);
+    setShowAddProject(false);
+    setNewProjectId('');
+  }, [newProjectId, projects]);
+
+  const handleRemoveExtraProject = useCallback(
+    (projectId: string) => {
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      setExtraProjects((prev) => prev.filter((id) => id !== projectId));
+      setFavProjects((prev) => prev.filter((id) => id !== projectId));
+    },
+    []
+  );
+
+  const buildFullTableId = (projectId: string, datasetId: string, tableId: string) =>
+    `\`${projectId}.${datasetId}.${tableId}\``;
+
+  const handleTableContextMenu = useCallback(
+    (e: React.MouseEvent, projectId: string, datasetId: string, tableId: string) => {
+      e.preventDefault();
+      const fullId = buildFullTableId(projectId, datasetId, tableId);
+      const dotPath = `${projectId}.${datasetId}.${tableId}`;
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        items: [
+          {
+            label: `Copy ${dotPath}`,
+            action: () => {
+              navigator.clipboard.writeText(dotPath);
+              setContextMenu(null);
+            },
+          },
+          {
+            label: `Copy ${fullId}`,
+            action: () => {
+              navigator.clipboard.writeText(fullId);
+              setContextMenu(null);
+            },
+          },
+          {
+            label: 'Insert into query editor',
+            action: () => {
+              insertIntoEditor(fullId);
+              setContextMenu(null);
+            },
+          },
+        ],
+      });
+    },
+    []
+  );
+
+  const insertIntoEditor = useCallback(
+    (text: string) => {
+      const editor = queryEditorRef.current;
+      if (!editor) {
+        updateActiveTab({ query: activeTab.query + text });
+        return;
+      }
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const before = activeTab.query.slice(0, start);
+      const after = activeTab.query.slice(end);
+      updateActiveTab({ query: before + text + after });
+      setTimeout(() => {
+        editor.focus();
+        editor.setSelectionRange(start + text.length, start + text.length);
+      }, 0);
+    },
+    [activeTab.query, updateActiveTab]
+  );
+
+  const handleTableDragStart = useCallback(
+    (e: React.DragEvent, projectId: string, datasetId: string, tableId: string) => {
+      const fullId = buildFullTableId(projectId, datasetId, tableId);
+      e.dataTransfer.setData('text/plain', fullId);
+      e.dataTransfer.effectAllowed = 'copy';
+    },
+    []
+  );
+
+  const handleEditorDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const text = e.dataTransfer.getData('text/plain');
+      if (text) insertIntoEditor(text);
+    },
+    [insertIntoEditor]
+  );
+
+  const handleEditorDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
   // Quick jump items: all loaded tables and datasets
   const quickJumpItems = useMemo(() => {
     const items: { label: string; detail: string; path: string }[] = [];
@@ -297,8 +438,13 @@ const BigQueryTab = () => {
         handleRunQuery();
       }
     };
+    const dismissContextMenu = () => setContextMenu(null);
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener('click', dismissContextMenu);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      window.removeEventListener('click', dismissContextMenu);
+    };
   }, [handleRunQuery]);
 
   const handleQuickJumpSelect = useCallback(
@@ -322,9 +468,30 @@ const BigQueryTab = () => {
           <div className="subhead">Datasets &amp; Tables</div>
         </div>
 
+        {favProjects.length > 0 && (
+          <div className="sidebar-section">
+            <div className="section-title">Favorite Projects</div>
+            <div className="bucket-list compact">
+              {favProjects.map((pid) => {
+                const proj = projects.find((p) => p.id === pid);
+                return (
+                  <button
+                    key={pid}
+                    className="bucket-main"
+                    onClick={() => toggleProjectExpand(pid)}
+                    title={pid}
+                  >
+                    <span className="bucket-name">{proj?.name ?? pid}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {favorites.length > 0 && (
           <div className="sidebar-section">
-            <div className="section-title">Favorites</div>
+            <div className="section-title">Favorite Tables</div>
             <div className="bucket-list compact">
               {favorites.map((fav) => (
                 <button
@@ -342,82 +509,140 @@ const BigQueryTab = () => {
         )}
 
         <div className="sidebar-section">
-          <div className="section-title">Projects</div>
+          <div className="section-header">
+            <span className="section-title" style={{ marginBottom: 0 }}>Projects</span>
+            <button
+              className="section-add"
+              onClick={() => setShowAddProject((v) => !v)}
+              title="Add project"
+            >
+              +
+            </button>
+          </div>
+          {showAddProject && (
+            <form
+              className="favorite-form"
+              style={{ marginBottom: 12 }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAddProject();
+              }}
+            >
+              <input
+                className="favorite-input"
+                value={newProjectId}
+                onChange={(e) => setNewProjectId(e.target.value)}
+                placeholder="project-id"
+                autoFocus
+              />
+              <button className="tiny-action" type="submit">Add</button>
+            </form>
+          )}
           <div className="tree">
-            {projects.map((project) => (
-              <div key={project.id}>
-                <div className="tree-row">
-                  <button
-                    className="tree-toggle"
-                    onClick={() => toggleProjectExpand(project.id)}
-                  >
-                    {expanded.projects[project.id] ? '−' : '+'}
-                  </button>
-                  <button className="tree-label" onClick={() => toggleProjectExpand(project.id)}>
-                    {project.name}
-                  </button>
-                </div>
-                {expanded.projects[project.id] && (
-                  <div style={{ paddingLeft: 16 }}>
-                    {treeLoading[project.id] && (
-                      <div className="tree-loading">Loading datasets...</div>
+            {projects.map((project) => {
+              const isExtraProject = extraProjects.includes(project.id);
+              const isFavProject = favProjects.includes(project.id);
+              return (
+                <div key={project.id}>
+                  <div className="tree-row">
+                    <button
+                      className="tree-toggle"
+                      onClick={() => toggleProjectExpand(project.id)}
+                    >
+                      {expanded.projects[project.id] ? '−' : '+'}
+                    </button>
+                    <button
+                      className={`favorite-toggle compact ${isFavProject ? 'active' : ''}`}
+                      onClick={() => toggleFavProject(project.id)}
+                      title={isFavProject ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      {isFavProject ? '\u2605' : '\u2606'}
+                    </button>
+                    <button className="tree-label" onClick={() => toggleProjectExpand(project.id)}>
+                      {project.name}
+                    </button>
+                    {isExtraProject && (
+                      <button
+                        className="bq-tab-close"
+                        onClick={() => handleRemoveExtraProject(project.id)}
+                        title="Remove project"
+                      >
+                        ×
+                      </button>
                     )}
-                    {(datasets[project.id] ?? []).map((ds) => {
-                      const dsKey = `${project.id}.${ds.id}`;
-                      return (
-                        <div key={ds.id}>
-                          <div className="tree-row">
-                            <button
-                              className="tree-toggle"
-                              onClick={() => toggleDatasetExpand(project.id, ds.id)}
-                            >
-                              {expanded.datasets[dsKey] ? '−' : '+'}
-                            </button>
-                            <button
-                              className="tree-label"
-                              onClick={() => toggleDatasetExpand(project.id, ds.id)}
-                            >
-                              {ds.id}
-                            </button>
-                          </div>
-                          {expanded.datasets[dsKey] && (
-                            <div style={{ paddingLeft: 16 }}>
-                              {treeLoading[dsKey] && (
-                                <div className="tree-loading">Loading tables...</div>
-                              )}
-                              {(tables[dsKey] ?? []).map((table) => {
-                                const fullPath = `${dsKey}.${table.id}`;
-                                const isFav = favorites.includes(fullPath);
-                                return (
-                                  <div key={table.id} className="tree-row">
-                                    <button
-                                      className={`favorite-toggle compact ${isFav ? 'active' : ''}`}
-                                      onClick={() => toggleFavorite(fullPath)}
-                                      title={isFav ? 'Remove from favorites' : 'Add to favorites'}
-                                    >
-                                      {isFav ? '\u2605' : '\u2606'}
-                                    </button>
-                                    <button
-                                      className={`tree-label ${previewTarget === fullPath ? 'bq-active-table' : ''}`}
-                                      onClick={() =>
-                                        handlePreviewTable(project.id, ds.id, table.id)
+                  </div>
+                  {expanded.projects[project.id] && (
+                    <div style={{ paddingLeft: 16 }}>
+                      {treeLoading[project.id] && (
+                        <div className="tree-loading">Loading datasets...</div>
+                      )}
+                      {(datasets[project.id] ?? []).map((ds) => {
+                        const dsKey = `${project.id}.${ds.id}`;
+                        return (
+                          <div key={ds.id}>
+                            <div className="tree-row">
+                              <button
+                                className="tree-toggle"
+                                onClick={() => toggleDatasetExpand(project.id, ds.id)}
+                              >
+                                {expanded.datasets[dsKey] ? '−' : '+'}
+                              </button>
+                              <button
+                                className="tree-label"
+                                onClick={() => toggleDatasetExpand(project.id, ds.id)}
+                              >
+                                {ds.id}
+                              </button>
+                            </div>
+                            {expanded.datasets[dsKey] && (
+                              <div style={{ paddingLeft: 16 }}>
+                                {treeLoading[dsKey] && (
+                                  <div className="tree-loading">Loading tables...</div>
+                                )}
+                                {(tables[dsKey] ?? []).map((table) => {
+                                  const fullPath = `${dsKey}.${table.id}`;
+                                  const isFav = favorites.includes(fullPath);
+                                  return (
+                                    <div
+                                      key={table.id}
+                                      className="tree-row"
+                                      draggable
+                                      onDragStart={(e) =>
+                                        handleTableDragStart(e, project.id, ds.id, table.id)
+                                      }
+                                      onContextMenu={(e) =>
+                                        handleTableContextMenu(e, project.id, ds.id, table.id)
                                       }
                                     >
-                                      {table.id}
-                                      <span className="bq-table-type">{table.type === 'VIEW' ? ' (view)' : ''}</span>
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
+                                      <button
+                                        className={`favorite-toggle compact ${isFav ? 'active' : ''}`}
+                                        onClick={() => toggleFavorite(fullPath)}
+                                        title={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                                      >
+                                        {isFav ? '\u2605' : '\u2606'}
+                                      </button>
+                                      <button
+                                        className={`tree-label ${previewTarget === fullPath ? 'bq-active-table' : ''}`}
+                                        onClick={() =>
+                                          handlePreviewTable(project.id, ds.id, table.id)
+                                        }
+                                      >
+                                        {table.id}
+                                        <span className="bq-table-type">{table.type === 'VIEW' ? ' (view)' : ''}</span>
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             {projects.length === 0 && !error && (
               <div className="tree-loading">Loading projects...</div>
             )}
@@ -478,7 +703,9 @@ const BigQueryTab = () => {
             className="bq-editor"
             value={activeTab.query}
             onChange={(e) => updateActiveTab({ query: e.target.value })}
-            placeholder="SELECT * FROM `project.dataset.table` LIMIT 5"
+            onDrop={handleEditorDrop}
+            onDragOver={handleEditorDragOver}
+            placeholder="SELECT * FROM `project.dataset.table` LIMIT 5 — drag a table here to insert its ID"
             spellCheck={false}
           />
         </div>
@@ -587,6 +814,20 @@ const BigQueryTab = () => {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {contextMenu && (
+        <div
+          className="context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {contextMenu.items.map((item) => (
+            <button key={item.label} className="context-item" onClick={item.action}>
+              {item.label}
+            </button>
+          ))}
         </div>
       )}
 
