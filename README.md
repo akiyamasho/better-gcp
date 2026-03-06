@@ -1,6 +1,6 @@
 # Better GCP
 
-![Version](https://img.shields.io/badge/version-v2.0.1-blue)
+![Version](https://img.shields.io/badge/version-v3.0.0-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
 
 Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI. All data stays on your machine. No telemetry, no cloud backend.
@@ -17,6 +17,16 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 - Drag-and-drop upload and drag-out download
 - Batch selection with download, delete, and select-all
 - Create folders from the empty-space context menu
+
+### Vertex AI Jobs
+
+- Monitor Vertex AI Custom Jobs across multiple regions (us-west1, us-central1, us-east1, asia-northeast1)
+- Jobs sorted by creation date (newest first) with region and state chip filters
+- Color-coded status with emoji indicators (Running, Succeeded, Failed, Queued, etc.)
+- Bulk cancel active jobs or delete completed jobs
+- Click a job name to view full details: timestamps, worker pool specs, machine/accelerator config, container image, and environment variables
+- Direct links to GCP Console and Cloud Logs for each job
+- Pagination with per-region "Load more" buttons
 
 ### BigQuery
 

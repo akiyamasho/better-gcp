@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import GcsTab from './GcsTab';
 import BigQueryTab from './BigQueryTab';
+import VertexAITab from './VertexAITab';
 
-type ServiceTab = 'gcs' | 'bigquery';
+type ServiceTab = 'gcs' | 'bigquery' | 'vertex-ai';
 
 const App = () => {
   const [activeService, setActiveService] = useState<ServiceTab>('gcs');
@@ -22,10 +23,17 @@ const App = () => {
         >
           BigQuery
         </button>
+        <button
+          className={`service-tab ${activeService === 'vertex-ai' ? 'active' : ''}`}
+          onClick={() => setActiveService('vertex-ai')}
+        >
+          Vertex AI Jobs
+        </button>
       </div>
       <div className="service-content">
         {activeService === 'gcs' && <GcsTab />}
         {activeService === 'bigquery' && <BigQueryTab />}
+        {activeService === 'vertex-ai' && <VertexAITab />}
       </div>
     </div>
   );

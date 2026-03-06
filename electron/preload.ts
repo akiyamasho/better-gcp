@@ -6,6 +6,7 @@ import type {
   DeleteRequest,
   DownloadManyRequest,
   DownloadRequest,
+  ListCustomJobsRequest,
   ListObjectsRequest,
   StartDragRequest,
   UploadRequest,
@@ -33,6 +34,13 @@ contextBridge.exposeInMainWorld('bq', {
   runQuery: (req: BqQueryRequest) => ipcRenderer.invoke('bq:run-query', req),
   loadSavedQueries: () => ipcRenderer.invoke('bq:load-saved-queries'),
   saveSavedQueries: (queries: BqSavedQuery[]) => ipcRenderer.invoke('bq:save-queries', queries),
+});
+
+contextBridge.exposeInMainWorld('vertexai', {
+  listCustomJobs: (req: ListCustomJobsRequest) =>
+    ipcRenderer.invoke('vertexai:list-custom-jobs', req),
+  cancelCustomJob: (jobName: string) => ipcRenderer.invoke('vertexai:cancel-custom-job', jobName),
+  deleteCustomJob: (jobName: string) => ipcRenderer.invoke('vertexai:delete-custom-job', jobName),
 });
 
 contextBridge.exposeInMainWorld('shell', {

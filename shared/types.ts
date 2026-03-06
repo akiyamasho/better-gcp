@@ -102,3 +102,50 @@ export type BqSavedQuery = {
   projectId?: string;
   createdAt: string;
 };
+
+export type VertexAICustomJob = {
+  name: string;
+  displayName: string;
+  state: string;
+  rawState: number;
+  region: string;
+  createTime: string;
+  startTime?: string;
+  endTime?: string;
+  updateTime?: string;
+  labels: Record<string, string>;
+  error?: { code: number; message: string };
+  workerPoolSpecs: VertexAIWorkerPoolSpec[];
+  baseOutputDirectory?: string;
+};
+
+export type VertexAIWorkerPoolSpec = {
+  replicaCount: string;
+  machineSpec?: {
+    machineType: string;
+    acceleratorType?: string;
+    acceleratorCount?: number;
+  };
+  diskSpec?: {
+    bootDiskType: string;
+    bootDiskSizeGb: number;
+  };
+  containerSpec?: {
+    imageUri: string;
+    env?: { name: string; value: string }[];
+    command?: string[];
+    args?: string[];
+  };
+};
+
+export type ListCustomJobsRequest = {
+  projectId: string;
+  region: string;
+  pageSize?: number;
+  pageToken?: string;
+};
+
+export type ListCustomJobsResponse = {
+  jobs: VertexAICustomJob[];
+  nextPageToken?: string;
+};

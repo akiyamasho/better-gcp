@@ -23,6 +23,7 @@ import {
   loadSavedQueries,
   saveSavedQueries,
 } from './bigquery';
+import { listCustomJobs, cancelCustomJob, deleteCustomJob } from './vertexai';
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 
@@ -222,6 +223,32 @@ ipcMain.handle('bq:load-saved-queries', async () => {
 ipcMain.handle('bq:save-queries', async (_event, req) => {
   try {
     await saveSavedQueries(req);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('vertexai:list-custom-jobs', async (_event, req) => {
+  try {
+    return { ok: true, data: await listCustomJobs(req) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('vertexai:cancel-custom-job', async (_event, jobName: string) => {
+  try {
+    await cancelCustomJob(jobName);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('vertexai:delete-custom-job', async (_event, jobName: string) => {
+  try {
+    await deleteCustomJob(jobName);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };
