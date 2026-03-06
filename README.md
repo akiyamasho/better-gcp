@@ -48,11 +48,15 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 
 ### Cloud Storage
 
-![Cloud Storage Tab](./doc/screenshot.png)
+![Cloud Storage Tab](./doc/01_gcs.png)
 
 ### BigQuery
 
-<!-- screenshot here -->
+![BigQuery Tab](./doc/02_bigquery.png)
+
+### Vertex AI Jobs
+
+![Vertex AI Jobs Tab](./doc/03_vertex-ai_custom-jobs.png)
 
 ---
 
