@@ -276,7 +276,11 @@ const BqGrid = ({ columns, rows }: { columns: string[]; rows: string[][] }) => {
   );
 };
 
-const BigQueryTab = () => {
+type BigQueryTabProps = {
+  isActive?: boolean;
+};
+
+const BigQueryTab = ({ isActive = true }: BigQueryTabProps) => {
   const [projects, setProjects] = useState<BqProject[]>([]);
   const [datasets, setDatasets] = useState<Record<string, BqDataset[]>>({});
   const [tables, setTables] = useState<Record<string, BqTable[]>>({});
@@ -647,6 +651,7 @@ const BigQueryTab = () => {
   }, [quickJumpItems, quickJumpQuery]);
 
   useEffect(() => {
+    if (!isActive) return;
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.shiftKey && e.key === 'p') {
@@ -668,7 +673,7 @@ const BigQueryTab = () => {
       window.removeEventListener('keydown', handler);
       window.removeEventListener('click', dismissContextMenu);
     };
-  }, [handleRunQuery]);
+  }, [handleRunQuery, isActive]);
 
   const handleQuickJumpSelect = useCallback(
     (item: { path: string }) => {

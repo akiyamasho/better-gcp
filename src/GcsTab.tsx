@@ -118,7 +118,11 @@ const getPrefixLabel = (prefix: string, parent: string) => {
   return trimmed.replace(/\/$/, '') || prefix;
 };
 
-const GcsTab = () => {
+type GcsTabProps = {
+  isActive?: boolean;
+};
+
+const GcsTab = ({ isActive = true }: GcsTabProps) => {
   const [buckets, setBuckets] = useState<GcsBucket[]>([]);
   const [currentBucket, setCurrentBucket] = useState('');
   const [currentPrefix, setCurrentPrefix] = useState('');
@@ -225,17 +229,20 @@ const GcsTab = () => {
   }, []);
 
   useEffect(() => {
+    if (!isActive) return;
     if (!showSearch) return;
     searchInputRef.current?.focus();
     setSearchIndex(0);
-  }, [showSearch]);
+  }, [isActive, showSearch]);
 
   useEffect(() => {
+    if (!isActive) return;
     if (!showPathModal) return;
     pathInputRef.current?.focus();
-  }, [showPathModal]);
+  }, [isActive, showPathModal]);
 
   useEffect(() => {
+    if (!isActive) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       const target = event.target as HTMLElement | null;
@@ -254,9 +261,10 @@ const GcsTab = () => {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [currentBucket, currentPrefix]);
+  }, [currentBucket, currentPrefix, isActive]);
 
   useEffect(() => {
+    if (!isActive) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (showSearch) setShowSearch(false);
@@ -264,7 +272,7 @@ const GcsTab = () => {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showSearch, showPathModal]);
+  }, [showSearch, showPathModal, isActive]);
 
   const ensureTreeLoaded = async (bucket: string, prefix: string, force = false) => {
     if (!bucket) return;

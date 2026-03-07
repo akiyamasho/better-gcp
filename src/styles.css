@@ -12,6 +12,18 @@
   --shadow: 0 10px 30px rgba(31, 41, 51, 0.08);
 }
 
+:root[data-theme='dark'] {
+  --ink: #e5edf6;
+  --muted: #9aa7b8;
+  --bg: #0f1722;
+  --panel: #1b2533;
+  --panel-strong: #131b27;
+  --accent: #60a5fa;
+  --accent-soft: rgba(96, 165, 250, 0.2);
+  --border: #2a3647;
+  --shadow: 0 10px 30px rgba(3, 9, 17, 0.45);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -750,6 +762,7 @@ body {
 
 .service-tabs {
   display: flex;
+  align-items: center;
   gap: 0;
   background: var(--panel-strong);
   border-bottom: 1px solid var(--border);
@@ -779,19 +792,128 @@ body {
   border-bottom-color: var(--accent);
 }
 
+.service-settings {
+  -webkit-app-region: no-drag;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.service-settings-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.service-settings-select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
 .service-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  position: relative;
 }
 
-.service-content .app {
+.service-panel {
+  display: none;
   min-height: 0;
   flex: 1;
   overflow: hidden;
 }
 
+.service-panel.active {
+  display: flex;
+}
+
+.service-panel .app {
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+:root[data-theme='dark'] body {
+  background: radial-gradient(circle at top left, #172231 0%, #111927 42%, #0b121c 100%);
+}
+
+:root[data-theme='dark'] .app {
+  background: radial-gradient(circle at top left, #1b2738 0%, #131c2a 40%, #0e1622 100%);
+}
+
+:root[data-theme='dark'] .sidebar,
+:root[data-theme='dark'] .service-tabs,
+:root[data-theme='dark'] .bq-tab-bar,
+:root[data-theme='dark'] .bq-query-panel,
+:root[data-theme='dark'] .bq-results-panel,
+:root[data-theme='dark'] .content,
+:root[data-theme='dark'] .panel,
+:root[data-theme='dark'] .modal-content,
+:root[data-theme='dark'] .vai-toolbar,
+:root[data-theme='dark'] .vai-side,
+:root[data-theme='dark'] .vai-detail,
+:root[data-theme='dark'] .vai-list {
+  background: var(--panel);
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .bucket-link,
+:root[data-theme='dark'] .bucket-main,
+:root[data-theme='dark'] .favorite-toggle,
+:root[data-theme='dark'] .section-add,
+:root[data-theme='dark'] .tiny-action,
+:root[data-theme='dark'] .secondary-button,
+:root[data-theme='dark'] .danger-button,
+:root[data-theme='dark'] .editor-button,
+:root[data-theme='dark'] .bq-tab.active,
+:root[data-theme='dark'] .modal-item,
+:root[data-theme='dark'] .vai-chip,
+:root[data-theme='dark'] .vai-job-row,
+:root[data-theme='dark'] .vai-job-detail {
+  background: #121a27;
+  border-color: var(--border);
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] input,
+:root[data-theme='dark'] textarea,
+:root[data-theme='dark'] select,
+:root[data-theme='dark'] .favorite-input,
+:root[data-theme='dark'] .path-input,
+:root[data-theme='dark'] .search-input,
+:root[data-theme='dark'] .editor,
+:root[data-theme='dark'] .bq-editor,
+:root[data-theme='dark'] .vai-project-input {
+  background: #0d1522;
+  color: var(--ink);
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .bq-table th,
+:root[data-theme='dark'] .bq-table td {
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .bq-table th {
+  background: #182233;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .bq-table td {
+  background: #101926;
+}
+
+:root[data-theme='dark'] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
 /* BigQuery tab bar */
 
 .bq-tab-bar {

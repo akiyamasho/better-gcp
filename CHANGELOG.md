@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2026-03-07
+
+### Added
+- Theme setting in service header with `System` (default), `Light`, and `Dark` modes.
+- Global service switching with `Cmd/Ctrl+Tab` and reverse cycling with `Cmd/Ctrl+Shift+Tab`.
+
+### Changed
+- Service tabs are now kept mounted while switching, preserving each tab's UI state.
+- Added dark-mode styling across Cloud Storage, BigQuery, and Vertex AI views.
+
 ## [3.0.1] - 2026-03-07
 
 ### Changed
