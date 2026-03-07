@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.1] - 2026-03-07
+
+### Changed
+- Updated screenshot assets for all service tabs.
+
+### Screenshots
+![Cloud Storage Tab](./doc/01_gcs.png)
+![BigQuery Tab](./doc/02_bigquery.png)
+![Vertex AI Jobs Tab](./doc/03_vertex-ai_custom-jobs.png)
+
+## [3.0.0] - 2026-03-07
+
+### Added
+- **Vertex AI Jobs tab** for monitoring Custom Jobs across supported regions.
+- Region and job-state filters with newest-first sorting.
+- Bulk actions to cancel active jobs and delete completed jobs.
+- Job detail pane with worker pool specs, machine/accelerator config, container image, and environment variables.
+- Quick links to GCP Console and Cloud Logs per job.
+- Pagination with per-region "Load more" controls.
+
+## [2.0.1] - 2026-02-25
+
+### Fixed
+- Detect active `gcloud` project ID in packaged macOS app.
+
 ## [2.0.0] - 2026-02-25
 
 ### Added
