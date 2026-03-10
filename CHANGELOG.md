@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.0] - 2026-03-10
+
+### Added
+- **Favorite datasets** in the BigQuery tab — star datasets in the tree to pin them to the sidebar for quick access.
+
 ## [3.1.0] - 2026-03-07
 
 ### Added

@@ -25,6 +25,7 @@ type TreeExpandState = {
 
 const FAVORITES_KEY = 'better-gcp:bq-favorites';
 const FAV_PROJECTS_KEY = 'better-gcp:bq-fav-projects';
+const FAV_DATASETS_KEY = 'better-gcp:bq-fav-datasets';
 const EXTRA_PROJECTS_KEY = 'better-gcp:bq-extra-projects';
 
 type ContextMenuState = {
@@ -288,6 +289,7 @@ const BigQueryTab = ({ isActive = true }: BigQueryTabProps) => {
   const [treeLoading, setTreeLoading] = useState<Record<string, boolean>>({});
   const [favorites, setFavorites] = useState<string[]>(() => readStringList(FAVORITES_KEY));
   const [favProjects, setFavProjects] = useState<string[]>(() => readStringList(FAV_PROJECTS_KEY));
+  const [favDatasets, setFavDatasets] = useState<string[]>(() => readStringList(FAV_DATASETS_KEY));
   const [extraProjects, setExtraProjects] = useState<string[]>(() => readStringList(EXTRA_PROJECTS_KEY));
   const [showAddProject, setShowAddProject] = useState(false);
   const [newProjectId, setNewProjectId] = useState('');
@@ -344,6 +346,10 @@ const BigQueryTab = ({ isActive = true }: BigQueryTabProps) => {
   useEffect(() => {
     writeStringList(FAV_PROJECTS_KEY, favProjects);
   }, [favProjects]);
+
+  useEffect(() => {
+    writeStringList(FAV_DATASETS_KEY, favDatasets);
+  }, [favDatasets]);
 
   useEffect(() => {
     writeStringList(EXTRA_PROJECTS_KEY, extraProjects);
@@ -491,6 +497,22 @@ const BigQueryTab = ({ isActive = true }: BigQueryTabProps) => {
       prev.includes(projectId) ? prev.filter((p) => p !== projectId) : [...prev, projectId]
     );
   }, []);
+
+  const toggleFavDataset = useCallback((dsPath: string) => {
+    setFavDatasets((prev) =>
+      prev.includes(dsPath) ? prev.filter((d) => d !== dsPath) : [...prev, dsPath]
+    );
+  }, []);
+
+  const handleFavDatasetClick = useCallback(
+    (dsPath: string) => {
+      const parts = dsPath.split('.');
+      if (parts.length === 2) {
+        toggleDatasetExpand(parts[0], parts[1]);
+      }
+    },
+    [toggleDatasetExpand]
+  );
 
   const handleAddProject = useCallback(async () => {
     const trimmed = newProjectId.trim();
@@ -717,6 +739,28 @@ const BigQueryTab = ({ isActive = true }: BigQueryTabProps) => {
           </div>
         )}
 
+        {favDatasets.length > 0 && (
+          <div className="sidebar-section">
+            <div className="section-title">Favorite Datasets</div>
+            <div className="bucket-list compact">
+              {favDatasets.map((dsPath) => {
+                const parts = dsPath.split('.');
+                return (
+                  <button
+                    key={dsPath}
+                    className="bucket-main"
+                    onClick={() => handleFavDatasetClick(dsPath)}
+                    title={dsPath}
+                  >
+                    <span className="bucket-name">{parts[1] ?? dsPath}</span>
+                    <span className="bucket-meta">{dsPath}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {favorites.length > 0 && (
           <div className="sidebar-section">
             <div className="section-title">Favorite Tables</div>
@@ -816,6 +860,7 @@ const BigQueryTab = ({ isActive = true }: BigQueryTabProps) => {
                       )}
                       {(datasets[project.id] ?? []).map((ds) => {
                         const dsKey = `${project.id}.${ds.id}`;
+                        const isFavDs = favDatasets.includes(dsKey);
                         return (
                           <div key={ds.id}>
                             <div className="tree-row">
@@ -824,6 +869,13 @@ const BigQueryTab = ({ isActive = true }: BigQueryTabProps) => {
                                 onClick={() => toggleDatasetExpand(project.id, ds.id)}
                               >
                                 {expanded.datasets[dsKey] ? '−' : '+'}
+                              </button>
+                              <button
+                                className={`favorite-toggle compact ${isFavDs ? 'active' : ''}`}
+                                onClick={() => toggleFavDataset(dsKey)}
+                                title={isFavDs ? 'Remove from favorites' : 'Add to favorites'}
+                              >
+                                {isFavDs ? '\u2605' : '\u2606'}
                               </button>
                               <button
                                 className="tree-label"
