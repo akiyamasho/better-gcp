@@ -914,6 +914,38 @@ body {
 :root[data-theme='dark'] .modal-backdrop {
   background: rgba(0, 0, 0, 0.45);
 }
+
+:root[data-theme='dark'] .vai-state-succeeded { color: #4ade80; }
+:root[data-theme='dark'] .vai-state-failed { color: #f87171; }
+:root[data-theme='dark'] .vai-state-running { color: #60a5fa; }
+:root[data-theme='dark'] .vai-state-queued,
+:root[data-theme='dark'] .vai-state-pending { color: #fbbf24; }
+:root[data-theme='dark'] .vai-state-cancelled,
+:root[data-theme='dark'] .vai-state-cancelling { color: #9ca3af; }
+:root[data-theme='dark'] .vai-state-expired { color: #9ca3af; }
+
+:root[data-theme='dark'] .vai-link-btn {
+  background: #1b2533;
+  color: var(--accent);
+}
+
+:root[data-theme='dark'] .vai-worker-spec {
+  background: #121a27;
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .vai-row:hover td {
+  background: rgba(96, 165, 250, 0.06);
+}
+
+:root[data-theme='dark'] .vai-td-name {
+  color: #e5edf6;
+}
+
+:root[data-theme='dark'] .vai-td-region,
+:root[data-theme='dark'] .vai-td-time {
+  color: #b0bec9;
+}
 /* BigQuery tab bar */
 
 .bq-tab-bar {

@@ -1,9 +1,18 @@
 # Better GCP
 
-![Version](https://img.shields.io/badge/version-v3.0.0-blue)
+![Version](https://img.shields.io/badge/version-v3.2.1-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
 
 Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI. All data stays on your machine. No telemetry, no cloud backend.
+
+## Download
+
+**[Download the latest DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-3.2.1-arm64.dmg)**
+
+> **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
+> ```bash
+> xattr -d com.apple.quarantine "/Applications/Better GCP.app"
+> ```
 
 ## Features
 

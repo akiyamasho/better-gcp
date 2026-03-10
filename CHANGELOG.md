@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.1] - 2026-03-10
+
+### Fixed
+- Dark mode contrast for Vertex AI Jobs tab — brighter state badges, readable table text, and fixed hardcoded white backgrounds on buttons and worker pool cards.
+
 ## [3.2.0] - 2026-03-10
 
 ### Added
