@@ -148,6 +148,8 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchIndex, setSearchIndex] = useState(0);
   const [showPathModal, setShowPathModal] = useState(false);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [folderNameInput, setFolderNameInput] = useState('');
   const [pendingSelection, setPendingSelection] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(
@@ -156,6 +158,7 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const pathInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -243,6 +246,12 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
 
   useEffect(() => {
     if (!isActive) return;
+    if (!showCreateFolder) return;
+    folderInputRef.current?.focus();
+  }, [isActive, showCreateFolder]);
+
+  useEffect(() => {
+    if (!isActive) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       const target = event.target as HTMLElement | null;
@@ -269,10 +278,11 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
       if (event.key !== 'Escape') return;
       if (showSearch) setShowSearch(false);
       if (showPathModal) setShowPathModal(false);
+      if (showCreateFolder) setShowCreateFolder(false);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showSearch, showPathModal, isActive]);
+  }, [showSearch, showPathModal, showCreateFolder, isActive]);
 
   const ensureTreeLoaded = async (bucket: string, prefix: string, force = false) => {
     if (!bucket) return;
@@ -611,14 +621,19 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
     setContextMenu({ x: event.clientX, y: event.clientY, items });
   };
 
-  const handleCreateFolder = async () => {
+  const handleCreateFolder = () => {
     if (!currentBucket) return;
-    const name = window.prompt('Folder name');
-    if (!name) return;
+    setFolderNameInput('');
+    setShowCreateFolder(true);
+  };
+
+  const submitCreateFolder = async () => {
+    if (!currentBucket || !folderNameInput.trim()) return;
+    setShowCreateFolder(false);
     const result = await window.gcs.createFolder({
       bucket: currentBucket,
       prefix: currentPrefix,
-      name,
+      name: folderNameInput.trim(),
     });
     if (!result.ok) {
       setError(result.error ?? 'Create folder failed');
@@ -1206,6 +1221,42 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
                 </button>
                 <button className="primary-button" type="submit">
                   Go
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {showCreateFolder ? (
+        <div className="modal-backdrop" onClick={() => setShowCreateFolder(false)}>
+          <div className="modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Create Folder</div>
+                <div className="modal-note">Create a new folder in the current prefix.</div>
+              </div>
+            </div>
+            <form
+              className="modal-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitCreateFolder();
+              }}
+            >
+              <input
+                ref={folderInputRef}
+                className="modal-input"
+                value={folderNameInput}
+                onChange={(event) => setFolderNameInput(event.target.value)}
+                placeholder="Folder name"
+              />
+              <div className="modal-actions">
+                <button className="secondary-button" type="button" onClick={() => setShowCreateFolder(false)}>
+                  Cancel
+                </button>
+                <button className="primary-button" type="submit" disabled={!folderNameInput.trim()}>
+                  Create
                 </button>
               </div>
             </form>
