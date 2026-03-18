@@ -174,15 +174,21 @@ const VertexAITab = () => {
     [filteredJobs, selected]
   );
 
-  const allSelectedActive = selectedJobs.length > 0 && selectedJobs.every((j) => ACTIVE_STATES.has(j.state));
-  const noneSelectedActive = selectedJobs.length > 0 && selectedJobs.every((j) => !ACTIVE_STATES.has(j.state));
+  const cancellableJobs = useMemo(
+    () => selectedJobs.filter((j) => ACTIVE_STATES.has(j.state)),
+    [selectedJobs]
+  );
+  const deletableJobs = useMemo(
+    () => selectedJobs.filter((j) => !ACTIVE_STATES.has(j.state)),
+    [selectedJobs]
+  );
 
   const cancelSelected = useCallback(async () => {
-    if (!allSelectedActive) return;
+    if (cancellableJobs.length === 0) return;
     setActionMsg('');
     let ok = 0;
     const errors: string[] = [];
-    for (const j of selectedJobs) {
+    for (const j of cancellableJobs) {
       const res = await (window as any).vertexai.cancelCustomJob(j.name);
       if (res.ok) ok++;
       else errors.push(`${jobId(j.name)}: ${res.error}`);
@@ -191,14 +197,14 @@ const VertexAITab = () => {
     if (errors.length) setError(errors.join('\n'));
     setSelected(new Set());
     setTimeout(fetchJobs, 1500);
-  }, [selectedJobs, allSelectedActive, fetchJobs]);
+  }, [cancellableJobs, fetchJobs]);
 
   const deleteSelected = useCallback(async () => {
-    if (!noneSelectedActive) return;
+    if (deletableJobs.length === 0) return;
     setActionMsg('');
     let ok = 0;
     const errors: string[] = [];
-    for (const j of selectedJobs) {
+    for (const j of deletableJobs) {
       const res = await (window as any).vertexai.deleteCustomJob(j.name);
       if (res.ok) ok++;
       else errors.push(`${jobId(j.name)}: ${res.error}`);
@@ -207,7 +213,7 @@ const VertexAITab = () => {
     if (errors.length) setError(errors.join('\n'));
     setSelected(new Set());
     setTimeout(fetchJobs, 1500);
-  }, [selectedJobs, noneSelectedActive, fetchJobs]);
+  }, [deletableJobs, fetchJobs]);
 
   const toggleRegion = useCallback((r: string) => {
     setRegions((prev) =>
@@ -291,19 +297,19 @@ const VertexAITab = () => {
           <div className="vai-action-buttons">
             <button
               className="secondary-button"
-              disabled={!allSelectedActive}
+              disabled={cancellableJobs.length === 0}
               onClick={cancelSelected}
-              title={allSelectedActive ? 'Cancel selected active jobs' : 'Only active jobs can be cancelled'}
+              title={cancellableJobs.length > 0 ? `Cancel ${cancellableJobs.length} active job(s)` : 'No active jobs selected'}
             >
-              Cancel
+              Cancel{cancellableJobs.length > 0 ? ` (${cancellableJobs.length})` : ''}
             </button>
             <button
               className="danger-button"
-              disabled={!noneSelectedActive}
+              disabled={deletableJobs.length === 0}
               onClick={deleteSelected}
-              title={noneSelectedActive ? 'Delete selected completed jobs' : 'Cannot delete active jobs'}
+              title={deletableJobs.length > 0 ? `Delete ${deletableJobs.length} completed job(s)` : 'No completed jobs selected'}
             >
-              Delete
+              Delete{deletableJobs.length > 0 ? ` (${deletableJobs.length})` : ''}
             </button>
           </div>
         </div>

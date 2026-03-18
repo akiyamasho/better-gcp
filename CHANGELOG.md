@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.3.0] - 2026-03-18
+
+### Improved
+- **Batch cancel for Vertex AI Jobs** — cancel active jobs (Queued, Pending, Running) from any mixed selection; non-active jobs are skipped automatically.
+- Cancel and Delete buttons now show the count of affected jobs (e.g. "Cancel (3)") and are independently enabled based on the selection contents.
+
 ## [3.2.1] - 2026-03-10
 
 ### Fixed

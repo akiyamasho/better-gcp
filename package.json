@@ -1,7 +1,7 @@
 {
   "name": "better-gcp",
   "private": true,
-  "version": "3.2.1",
+  "version": "3.3.0",
   "description": "Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI.",
   "author": "Sho Akiyama (秋山翔)",
   "main": "dist-electron/main.js",
