@@ -160,3 +160,58 @@ export type ListCustomJobsResponse = {
   jobs: VertexAICustomJob[];
   nextPageToken?: string;
 };
+
+// Vertex AI Pipelines
+
+export type PipelineTaskDetail = {
+  taskId: string;
+  taskName: string;
+  state: string;
+  createTime: string;
+  startTime?: string;
+  endTime?: string;
+  executionName?: string;
+  inputs: Record<string, string[]>;
+  outputs: Record<string, string[]>;
+  parentTaskId?: string;
+  pipelineTaskStatus?: { state: string; updateTime: string }[];
+  error?: { code: number; message: string };
+};
+
+export type PipelineJob = {
+  name: string;
+  displayName: string;
+  state: string;
+  rawState: number;
+  region: string;
+  createTime: string;
+  startTime?: string;
+  endTime?: string;
+  updateTime?: string;
+  labels: Record<string, string>;
+  taskDetails: PipelineTaskDetail[];
+  pipelineSpec?: any;
+  templateUri?: string;
+  templateMetadata?: { version?: string };
+  runtimeConfig?: {
+    parameters?: Record<string, any>;
+    gcsOutputDirectory?: string;
+    parameterValues?: Record<string, any>;
+  };
+  error?: { code: number; message: string };
+  network?: string;
+  serviceAccount?: string;
+};
+
+export type ListPipelineJobsRequest = {
+  projectId: string;
+  region: string;
+  pageSize?: number;
+  pageToken?: string;
+  filter?: string;
+};
+
+export type ListPipelineJobsResponse = {
+  jobs: PipelineJob[];
+  nextPageToken?: string;
+};

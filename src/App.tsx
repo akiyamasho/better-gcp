@@ -2,11 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import GcsTab from './GcsTab';
 import BigQueryTab from './BigQueryTab';
 import VertexAITab from './VertexAITab';
+import PipelinesTab from './PipelinesTab';
 
-type ServiceTab = 'gcs' | 'bigquery' | 'vertex-ai';
+type ServiceTab = 'gcs' | 'bigquery' | 'vertex-ai' | 'pipelines';
 type ThemePreference = 'system' | 'light' | 'dark';
 
-const TAB_ORDER: ServiceTab[] = ['gcs', 'bigquery', 'vertex-ai'];
+const TAB_ORDER: ServiceTab[] = ['gcs', 'bigquery', 'vertex-ai', 'pipelines'];
 const THEME_STORAGE_KEY = 'better-gcp:theme';
 
 const isThemePreference = (value: string): value is ThemePreference =>
@@ -95,6 +96,12 @@ const App = () => {
         >
           Vertex AI Jobs
         </button>
+        <button
+          className={`service-tab ${activeService === 'pipelines' ? 'active' : ''}`}
+          onClick={() => setActiveService('pipelines')}
+        >
+          Pipelines
+        </button>
         <div className="service-settings">
           <label className="service-settings-label" htmlFor="theme-preference">
             Theme
@@ -120,6 +127,9 @@ const App = () => {
         </div>
         <div className={`service-panel ${activeService === 'vertex-ai' ? 'active' : ''}`}>
           <VertexAITab />
+        </div>
+        <div className={`service-panel ${activeService === 'pipelines' ? 'active' : ''}`}>
+          <PipelinesTab isActive={activeService === 'pipelines'} />
         </div>
       </div>
     </div>

@@ -13,8 +13,9 @@ const normalizePrefix = (prefix?: string) => {
 
 const toPosix = (value: string) => value.split(path.sep).join('/');
 
-export const listBuckets = async (): Promise<GcsBucket[]> => {
-  const [buckets] = await storage.getBuckets();
+export const listBuckets = async (projectId?: string): Promise<GcsBucket[]> => {
+  const client = projectId ? new Storage({ projectId }) : storage;
+  const [buckets] = await client.getBuckets();
   return buckets.map((bucket) => ({
     name: bucket.name,
     location: bucket.metadata?.location,

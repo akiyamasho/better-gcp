@@ -13,6 +13,9 @@ import type {
   GcsBucket,
   ListObjectsRequest,
   ListObjectsResponse,
+  ListPipelineJobsRequest,
+  ListPipelineJobsResponse,
+  PipelineJob,
   StartDragRequest,
   UploadRequest,
 } from '../shared/types';
@@ -22,7 +25,7 @@ type IpcResult<T> = { ok: true; data: T } | { ok: false; error: string };
 declare global {
   interface Window {
     gcs: {
-      listBuckets: () => Promise<GcsBucket[]>;
+      listBuckets: (projectId?: string) => Promise<GcsBucket[]>;
       listObjects: (req: ListObjectsRequest) => Promise<ListObjectsResponse>;
       download: (req: DownloadRequest) => Promise<{ canceled: boolean } | { canceled: boolean; error?: string }>;
       downloadMany: (
@@ -46,6 +49,12 @@ declare global {
       runQuery: (req: BqQueryRequest) => Promise<IpcResult<BqQueryResult>>;
       loadSavedQueries: () => Promise<IpcResult<BqSavedQuery[]>>;
       saveSavedQueries: (queries: BqSavedQuery[]) => Promise<{ ok: boolean; error?: string }>;
+    };
+    pipelines: {
+      list: (req: ListPipelineJobsRequest) => Promise<IpcResult<ListPipelineJobsResponse>>;
+      get: (req: { projectId: string; region: string; pipelineJobId: string }) => Promise<IpcResult<PipelineJob>>;
+      cancel: (jobName: string) => Promise<{ ok: boolean; error?: string }>;
+      delete: (jobName: string) => Promise<{ ok: boolean; error?: string }>;
     };
     shell: {
       openExternal: (url: string) => Promise<void>;

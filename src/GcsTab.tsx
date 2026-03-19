@@ -122,6 +122,8 @@ type GcsTabProps = {
   isActive?: boolean;
 };
 
+const GCS_PROJECT_STORAGE_KEY = 'better-gcs:project';
+
 const GcsTab = ({ isActive = true }: GcsTabProps) => {
   const [buckets, setBuckets] = useState<GcsBucket[]>([]);
   const [currentBucket, setCurrentBucket] = useState('');
@@ -137,6 +139,13 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
   const [favoriteBuckets, setFavoriteBuckets] = useState<string[]>([]);
   const [recentBuckets, setRecentBuckets] = useState<string[]>([]);
   const [storageLoaded, setStorageLoaded] = useState(false);
+  const [gcsProjectId, setGcsProjectId] = useState(() => {
+    try { return localStorage.getItem(GCS_PROJECT_STORAGE_KEY) || ''; } catch { return ''; }
+  });
+  const [gcsProjectInput, setGcsProjectInput] = useState(() => {
+    try { return localStorage.getItem(GCS_PROJECT_STORAGE_KEY) || ''; } catch { return ''; }
+  });
+  const [loadingBuckets, setLoadingBuckets] = useState(false);
   const [showTree, setShowTree] = useState(true);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showRecent, setShowRecent] = useState(false);
@@ -177,24 +186,27 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
     writeStoredList(RECENT_STORAGE_KEY, recentBuckets);
   }, [recentBuckets, storageLoaded]);
 
-  useEffect(() => {
-    let mounted = true;
+  const fetchBuckets = (projectOverride?: string) => {
+    const pid = projectOverride ?? gcsProjectId;
+    setLoadingBuckets(true);
+    setError('');
     window.gcs
-      .listBuckets()
+      .listBuckets(pid || undefined)
       .then((data) => {
-        if (!mounted) return;
         setBuckets(data);
         if (!currentBucket && data.length > 0) {
           navigate(data[0].name, '', true);
         }
+        setLoadingBuckets(false);
       })
       .catch((err) => {
-        if (!mounted) return;
         setError(String(err));
+        setLoadingBuckets(false);
       });
-    return () => {
-      mounted = false;
-    };
+  };
+
+  useEffect(() => {
+    fetchBuckets();
   }, []);
 
   useEffect(() => {
@@ -823,6 +835,26 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
         <div className="sidebar-header">
           <div className="logo">Better GCS</div>
           <div className="subhead">Finder-style cloud browser</div>
+          <form
+            className="gcs-project-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const pid = gcsProjectInput.trim();
+              setGcsProjectId(pid);
+              try { localStorage.setItem(GCS_PROJECT_STORAGE_KEY, pid); } catch {}
+              fetchBuckets(pid);
+            }}
+          >
+            <input
+              className="gcs-project-input"
+              placeholder="Project ID (optional)"
+              value={gcsProjectInput}
+              onChange={(e) => setGcsProjectInput(e.target.value)}
+            />
+            <button className="primary-button gcs-project-btn" type="submit" disabled={loadingBuckets}>
+              {loadingBuckets ? '...' : 'Go'}
+            </button>
+          </form>
         </div>
         <div className="sidebar-section">
           <button className="section-toggle" onClick={() => setShowTree((prev) => !prev)}>

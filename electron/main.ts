@@ -24,6 +24,7 @@ import {
   saveSavedQueries,
 } from './bigquery';
 import { listCustomJobs, cancelCustomJob, deleteCustomJob } from './vertexai';
+import { listPipelineJobs, getPipelineJob, cancelPipelineJob, deletePipelineJob } from './vertexai-pipelines';
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 
@@ -63,7 +64,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-ipcMain.handle('gcs:list-buckets', async () => listBuckets());
+ipcMain.handle('gcs:list-buckets', async (_event, projectId?: string) => listBuckets(projectId));
 
 ipcMain.handle('gcs:list-objects', async (_event, req) => listObjects(req));
 
@@ -249,6 +250,40 @@ ipcMain.handle('vertexai:cancel-custom-job', async (_event, jobName: string) => 
 ipcMain.handle('vertexai:delete-custom-job', async (_event, jobName: string) => {
   try {
     await deleteCustomJob(jobName);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('pipelines:list', async (_event, req) => {
+  try {
+    return { ok: true, data: await listPipelineJobs(req) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('pipelines:get', async (_event, req) => {
+  try {
+    return { ok: true, data: await getPipelineJob(req) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('pipelines:cancel', async (_event, jobName: string) => {
+  try {
+    await cancelPipelineJob(jobName);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('pipelines:delete', async (_event, jobName: string) => {
+  try {
+    await deletePipelineJob(jobName);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };

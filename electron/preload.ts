@@ -7,13 +7,14 @@ import type {
   DownloadManyRequest,
   DownloadRequest,
   ListCustomJobsRequest,
+  ListPipelineJobsRequest,
   ListObjectsRequest,
   StartDragRequest,
   UploadRequest,
 } from './types';
 
 contextBridge.exposeInMainWorld('gcs', {
-  listBuckets: () => ipcRenderer.invoke('gcs:list-buckets'),
+  listBuckets: (projectId?: string) => ipcRenderer.invoke('gcs:list-buckets', projectId),
   listObjects: (req: ListObjectsRequest) => ipcRenderer.invoke('gcs:list-objects', req),
   download: (req: DownloadRequest) => ipcRenderer.invoke('gcs:download', req),
   downloadMany: (req: DownloadManyRequest) => ipcRenderer.invoke('gcs:download-many', req),
@@ -41,6 +42,14 @@ contextBridge.exposeInMainWorld('vertexai', {
     ipcRenderer.invoke('vertexai:list-custom-jobs', req),
   cancelCustomJob: (jobName: string) => ipcRenderer.invoke('vertexai:cancel-custom-job', jobName),
   deleteCustomJob: (jobName: string) => ipcRenderer.invoke('vertexai:delete-custom-job', jobName),
+});
+
+contextBridge.exposeInMainWorld('pipelines', {
+  list: (req: ListPipelineJobsRequest) => ipcRenderer.invoke('pipelines:list', req),
+  get: (req: { projectId: string; region: string; pipelineJobId: string }) =>
+    ipcRenderer.invoke('pipelines:get', req),
+  cancel: (jobName: string) => ipcRenderer.invoke('pipelines:cancel', jobName),
+  delete: (jobName: string) => ipcRenderer.invoke('pipelines:delete', jobName),
 });
 
 contextBridge.exposeInMainWorld('shell', {
