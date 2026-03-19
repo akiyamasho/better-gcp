@@ -1,13 +1,13 @@
 # Better GCP
 
-![Version](https://img.shields.io/badge/version-v3.5.0-blue)
+![Version](https://img.shields.io/badge/version-v3.6.0-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
 
 Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI. All data stays on your machine. No telemetry, no cloud backend.
 
 ## Download
 
-**[Download the latest DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-3.5.0-arm64.dmg)**
+**[Download the latest DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-3.6.0-arm64.dmg)**
 
 > **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
 > ```bash
@@ -41,6 +41,8 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 - Fit-to-view, zoom controls, and reset
 - Runtime parameters summary
 - Batch cancel and delete operations
+- Node-level Cloud Logging links (filtered to the selected task)
+- Auto-refresh for active pipelines (every 15s) with manual refresh button
 - Direct links to GCP Console and Cloud Logging
 
 ### Vertex AI Jobs

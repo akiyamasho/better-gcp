@@ -1663,6 +1663,13 @@ body {
 .pipe-dag-actions {
   display: flex;
   gap: 6px;
+  align-items: center;
+}
+
+.pipe-auto-refresh-hint {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
 }
 
 .pipe-params-bar {

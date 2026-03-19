@@ -70,6 +70,16 @@ function logsUrl(job: PipelineJob, projectId: string): string {
   return `https://console.cloud.google.com/logs/query;query=${query}?project=${projectId}`;
 }
 
+function nodeLogsUrl(job: PipelineJob, task: PipelineTaskDetail, projectId: string): string {
+  const id = pipelineJobId(job.name);
+  let ts = '';
+  if (task.createTime) {
+    ts = `%20timestamp%3E%3D%22${encodeURIComponent(task.createTime)}%22`;
+  }
+  const query = `resource.labels.pipeline_job_id%3D%22${id}%22%20%22${encodeURIComponent(task.taskName)}%22${ts}`;
+  return `https://console.cloud.google.com/logs/query;query=${query}?project=${projectId}`;
+}
+
 // ── DAG Layout ──────────────────────────────────────────────────────────
 
 type DagNode = PipelineTaskDetail & { x: number; y: number; depth: number; children: string[] };
@@ -645,7 +655,7 @@ const PipelineSummaryPanel: React.FC<{ job: PipelineJob }> = ({ job }) => (
   </div>
 );
 
-const NodeDetailPanel: React.FC<{ task: PipelineTaskDetail }> = ({ task }) => (
+const NodeDetailPanel: React.FC<{ task: PipelineTaskDetail; job: PipelineJob; projectId: string }> = ({ task, job, projectId }) => (
   <div className="pipe-node-detail-content">
     <div className="vai-detail-section">
       <h4>Overview</h4>
@@ -669,6 +679,13 @@ const NodeDetailPanel: React.FC<{ task: PipelineTaskDetail }> = ({ task }) => (
           </>
         )}
       </div>
+      <button
+        className="vai-link-btn"
+        style={{ marginTop: 8 }}
+        onClick={() => window.shell.openExternal(nodeLogsUrl(job, task, projectId))}
+      >
+        Node Logs
+      </button>
     </div>
 
     {task.error && (
@@ -726,10 +743,11 @@ type DetailPanelTab = 'summary' | 'node';
 
 const DagDetailPanel: React.FC<{
   job: PipelineJob;
+  projectId: string;
   selectedTask: PipelineTaskDetail | null;
   activeTab: DetailPanelTab;
   onTabChange: (tab: DetailPanelTab) => void;
-}> = ({ job, selectedTask, activeTab, onTabChange }) => (
+}> = ({ job, projectId, selectedTask, activeTab, onTabChange }) => (
   <div className="pipe-detail-panel">
     <div className="pipe-detail-tabs">
       <button
@@ -748,7 +766,7 @@ const DagDetailPanel: React.FC<{
     </div>
     <div className="pipe-detail-tab-content">
       {activeTab === 'summary' && <PipelineSummaryPanel job={job} />}
-      {activeTab === 'node' && selectedTask && <NodeDetailPanel task={selectedTask} />}
+      {activeTab === 'node' && selectedTask && <NodeDetailPanel task={selectedTask} job={job} projectId={projectId} />}
       {activeTab === 'node' && !selectedTask && (
         <div className="empty-state" style={{ padding: '24px' }}>Select a node in the DAG to view its details.</div>
       )}
@@ -871,6 +889,25 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
     },
     [projectId]
   );
+
+  const refreshPipeline = useCallback(async () => {
+    if (!activePipeline) return;
+    try {
+      const id = pipelineJobId(activePipeline.name);
+      const res = await window.pipelines.get({ projectId, region: activePipeline.region, pipelineJobId: id });
+      if (!res.ok) throw new Error(res.error);
+      setActivePipeline(res.data);
+    } catch (err: any) {
+      setError(String(err));
+    }
+  }, [activePipeline, projectId]);
+
+  // Auto-refresh DAG every 15s when the pipeline is active
+  useEffect(() => {
+    if (viewMode !== 'dag' || !activePipeline || !ACTIVE_STATES.has(activePipeline.state)) return;
+    const timer = setInterval(refreshPipeline, 15000);
+    return () => clearInterval(timer);
+  }, [viewMode, activePipeline, refreshPipeline]);
 
   const backToList = useCallback(() => {
     setViewMode('list');
@@ -995,6 +1032,12 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
           </div>
           <DagProgressBar tasks={activePipeline.taskDetails} />
           <div className="pipe-dag-actions">
+            <button className="secondary-button" onClick={refreshPipeline}>
+              Refresh
+            </button>
+            {ACTIVE_STATES.has(activePipeline.state) && (
+              <span className="pipe-auto-refresh-hint">Auto-refreshes every 15s</span>
+            )}
             <button
               className="vai-link-btn"
               onClick={() => window.shell.openExternal(consoleUrl(activePipeline, projectId))}
@@ -1018,6 +1061,7 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
           />
           <DagDetailPanel
             job={activePipeline}
+            projectId={projectId}
             selectedTask={selectedTaskDetail ?? null}
             activeTab={detailTab}
             onTabChange={setDetailTab}

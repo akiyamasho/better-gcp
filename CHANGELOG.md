@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.6.0] - 2026-03-19
+
+### Added
+- **Node Logs button** in Pipelines DAG view — click a node and open Cloud Logging filtered to that specific task (not the full pipeline).
+- **Refresh button** in Pipelines DAG toolbar — manually refresh the pipeline state at any time.
+- **Auto-refresh** for active pipelines — DAG view automatically polls every 15 seconds while the pipeline is running/queued/pending.
+
 ## [3.5.0] - 2026-03-19
 
 ### Added
