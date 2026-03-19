@@ -74,16 +74,27 @@ function logsUrl(job: PipelineJob, projectId: string): string {
 
 type DagNode = PipelineTaskDetail & { x: number; y: number; depth: number; children: string[] };
 
-const NODE_W = 200;
-const NODE_H = 60;
-const H_GAP = 60;
-const V_GAP = 32;
+const NODE_W = 220;
+const NODE_H = 72;
+const H_GAP = 40;
+const V_GAP = 80;
+
+function stateColor(state: string): string {
+  switch (state) {
+    case 'SUCCEEDED': return '#16a34a';
+    case 'FAILED': return '#dc2626';
+    case 'RUNNING': return '#2563eb';
+    case 'PENDING': case 'NOT_STARTED': return '#d97706';
+    case 'SKIPPED': return '#9ca3af';
+    case 'CANCELLED': case 'CANCELLING': return '#6b7280';
+    default: return '#6b7280';
+  }
+}
 
 function buildDag(tasks: PipelineTaskDetail[]): { nodes: Map<string, DagNode>; width: number; height: number } {
   const nodes = new Map<string, DagNode>();
   const childMap = new Map<string, string[]>();
 
-  // Build parent→children map
   for (const t of tasks) {
     const node: DagNode = { ...t, x: 0, y: 0, depth: 0, children: [] };
     nodes.set(t.taskId, node);
@@ -94,13 +105,11 @@ function buildDag(tasks: PipelineTaskDetail[]): { nodes: Map<string, DagNode>; w
       childMap.get(t.parentTaskId)!.push(t.taskId);
     }
   }
-  // Copy children refs
   for (const [id, children] of childMap) {
     const node = nodes.get(id);
     if (node) node.children = children;
   }
 
-  // Find roots (no parent or parent not in set)
   const roots: string[] = [];
   for (const t of tasks) {
     if (!t.parentTaskId || !nodes.has(t.parentTaskId)) {
@@ -108,7 +117,7 @@ function buildDag(tasks: PipelineTaskDetail[]): { nodes: Map<string, DagNode>; w
     }
   }
 
-  // BFS to assign depth
+  // BFS to assign depth (vertical levels, top-to-bottom)
   const queue = [...roots.map((id) => ({ id, depth: 0 }))];
   const visited = new Set<string>();
   while (queue.length > 0) {
@@ -125,28 +134,206 @@ function buildDag(tasks: PipelineTaskDetail[]): { nodes: Map<string, DagNode>; w
     }
   }
 
-  // Group by depth
+  // Group by depth (rows)
   const depthGroups = new Map<number, string[]>();
   for (const [id, node] of nodes) {
     if (!depthGroups.has(node.depth)) depthGroups.set(node.depth, []);
     depthGroups.get(node.depth)!.push(id);
   }
 
-  // Assign positions
-  let maxX = 0;
-  for (const [depth, ids] of depthGroups) {
-    const x = depth * (NODE_W + H_GAP);
-    for (let i = 0; i < ids.length; i++) {
-      const node = nodes.get(ids[i])!;
-      node.x = x;
-      node.y = i * (NODE_H + V_GAP);
-      maxX = Math.max(maxX, node.x + NODE_W);
+  // First pass: assign positions row by row, centering children under parent
+  // Leaf-first (bottom-up) sizing then top-down placement
+  const subtreeWidth = new Map<string, number>();
+
+  function calcWidth(id: string): number {
+    const node = nodes.get(id);
+    if (!node || node.children.length === 0) {
+      subtreeWidth.set(id, NODE_W);
+      return NODE_W;
+    }
+    const childrenW = node.children.reduce((sum, cid) => sum + calcWidth(cid), 0)
+      + (node.children.length - 1) * H_GAP;
+    const w = Math.max(NODE_W, childrenW);
+    subtreeWidth.set(id, w);
+    return w;
+  }
+
+  // Calculate total width needed for root layer
+  for (const r of roots) calcWidth(r);
+  const totalRootsWidth = roots.reduce((s, r) => s + (subtreeWidth.get(r) ?? NODE_W), 0)
+    + (roots.length - 1) * H_GAP;
+
+  // Place nodes top-down
+  function placeNode(id: string, centerX: number, depth: number) {
+    const node = nodes.get(id);
+    if (!node) return;
+    node.x = centerX - NODE_W / 2;
+    node.y = depth * (NODE_H + V_GAP);
+    node.depth = depth;
+
+    if (node.children.length === 0) return;
+    const childrenTotalW = node.children.reduce((s, cid) => s + (subtreeWidth.get(cid) ?? NODE_W), 0)
+      + (node.children.length - 1) * H_GAP;
+    let cx = centerX - childrenTotalW / 2;
+    for (const cid of node.children) {
+      const cw = subtreeWidth.get(cid) ?? NODE_W;
+      placeNode(cid, cx + cw / 2, depth + 1);
+      cx += cw + H_GAP;
     }
   }
 
-  const maxY = Math.max(...Array.from(nodes.values()).map((n) => n.y + NODE_H), NODE_H);
+  let startX = 0;
+  for (const r of roots) {
+    const w = subtreeWidth.get(r) ?? NODE_W;
+    placeNode(r, startX + w / 2, 0);
+    startX += w + H_GAP;
+  }
+
+  // Normalize: shift so min x is 0
+  let minX = Infinity;
+  for (const n of nodes.values()) minX = Math.min(minX, n.x);
+  if (minX < 0) {
+    for (const n of nodes.values()) n.x -= minX;
+  }
+
+  let maxX = 0, maxY = 0;
+  for (const n of nodes.values()) {
+    maxX = Math.max(maxX, n.x + NODE_W);
+    maxY = Math.max(maxY, n.y + NODE_H);
+  }
+
   return { nodes, width: maxX + 40, height: maxY + 40 };
 }
+
+// ── Status SVG Icons (12px) ─────────────────────────────────────────────
+
+const StatusIcon: React.FC<{ state: string }> = ({ state }) => {
+  const color = stateColor(state);
+  const size = 12;
+  if (state === 'SUCCEEDED') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 12 12">
+        <circle cx="6" cy="6" r="6" fill={color} />
+        <path d="M3.5 6 L5.5 8 L8.5 4" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (state === 'FAILED') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 12 12">
+        <circle cx="6" cy="6" r="6" fill={color} />
+        <path d="M4 4 L8 8 M8 4 L4 8" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (state === 'RUNNING') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 12 12" className="dag-spinner">
+        <circle cx="6" cy="6" r="6" fill={color} />
+        <path d="M6 2.5 A3.5 3.5 0 0 1 9.5 6" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  // Default: empty circle for pending/not_started/etc
+  return (
+    <svg width={size} height={size} viewBox="0 0 12 12">
+      <circle cx="6" cy="6" r="5.5" fill="none" stroke={color} strokeWidth="1" />
+      <circle cx="6" cy="6" r="3" fill={color} opacity="0.4" />
+    </svg>
+  );
+};
+
+// ── Minimap ─────────────────────────────────────────────────────────────
+
+const DagMinimap: React.FC<{
+  nodes: Map<string, DagNode>;
+  dagWidth: number;
+  dagHeight: number;
+  pan: { x: number; y: number };
+  zoom: number;
+  containerWidth: number;
+  containerHeight: number;
+  onClickMinimap: (newPan: { x: number; y: number }) => void;
+}> = ({ nodes, dagWidth, dagHeight, pan, zoom, containerWidth, containerHeight, onClickMinimap }) => {
+  const mmW = 160;
+  const mmH = 120;
+  const padded = { w: Math.max(dagWidth, 400), h: Math.max(dagHeight, 300) };
+  const scale = Math.min(mmW / padded.w, mmH / padded.h);
+
+  // Viewport rect in DAG coords
+  const vpX = -pan.x;
+  const vpY = -pan.y;
+  const vpW = containerWidth / zoom;
+  const vpH = containerHeight / zoom;
+
+  const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = (e.clientX - rect.left) / scale;
+    const clickY = (e.clientY - rect.top) / scale;
+    onClickMinimap({
+      x: -(clickX - vpW / 2),
+      y: -(clickY - vpH / 2),
+    });
+  };
+
+  return (
+    <div className="dag-minimap">
+      <svg width={mmW} height={mmH} onClick={handleClick} style={{ cursor: 'pointer' }}>
+        <rect width={mmW} height={mmH} fill="var(--bg)" opacity="0.9" rx="4" />
+        <g transform={`scale(${scale})`}>
+          {Array.from(nodes.values()).map((node) => (
+            <rect
+              key={node.taskId}
+              x={node.x}
+              y={node.y}
+              width={NODE_W}
+              height={NODE_H}
+              rx={3}
+              fill={stateColor(node.state)}
+              opacity={0.7}
+            />
+          ))}
+          <rect
+            x={vpX}
+            y={vpY}
+            width={vpW}
+            height={vpH}
+            fill="var(--accent)"
+            opacity={0.15}
+            stroke="var(--accent)"
+            strokeWidth={2 / scale}
+            rx={2}
+          />
+        </g>
+      </svg>
+    </div>
+  );
+};
+
+// ── Progress Bar ────────────────────────────────────────────────────────
+
+const DagProgressBar: React.FC<{ tasks: PipelineTaskDetail[] }> = ({ tasks }) => {
+  if (tasks.length === 0) return null;
+  const completed = tasks.filter((t) => t.state === 'SUCCEEDED').length;
+  return (
+    <div className="dag-progress">
+      <span className="dag-progress-label">{completed}/{tasks.length} steps completed</span>
+      <div className="dag-progress-bar">
+        {tasks.map((t, i) => (
+          <div
+            key={t.taskId}
+            className="dag-progress-segment"
+            style={{
+              flex: 1,
+              backgroundColor: stateColor(t.state),
+              borderRadius: i === 0 ? '3px 0 0 3px' : i === tasks.length - 1 ? '0 3px 3px 0' : '0',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 // ── Pipeline DAG Component ──────────────────────────────────────────────
 
@@ -160,8 +347,22 @@ const PipelineDag: React.FC<{
   const [zoom, setZoom] = useState(1);
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const [containerSize, setContainerSize] = useState({ w: 800, h: 600 });
 
   const { nodes, width, height } = useMemo(() => buildDag(tasks), [tasks]);
+
+  // Track container size for minimap viewport
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerSize({ w: entry.contentRect.width, h: entry.contentRect.height });
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -172,7 +373,6 @@ const PipelineDag: React.FC<{
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button !== 0) return;
-      // Don't start drag if clicking a node
       if ((e.target as HTMLElement).closest('.dag-node')) return;
       setDragging(true);
       dragStart.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
@@ -198,17 +398,27 @@ const PipelineDag: React.FC<{
     setZoom(1);
   }, []);
 
-  const stateColor = (state: string) => {
-    switch (state) {
-      case 'SUCCEEDED': return '#16a34a';
-      case 'FAILED': return '#dc2626';
-      case 'RUNNING': return '#2563eb';
-      case 'PENDING': case 'NOT_STARTED': return '#d97706';
-      case 'SKIPPED': return '#9ca3af';
-      case 'CANCELLED': case 'CANCELLING': return '#6b7280';
-      default: return '#6b7280';
-    }
-  };
+  const handleFitView = useCallback(() => {
+    if (nodes.size === 0) return;
+    const cw = containerSize.w;
+    const ch = containerSize.h;
+    const padX = 40;
+    const padY = 40;
+    const fitZoom = Math.min(
+      (cw - padX * 2) / width,
+      (ch - padY * 2) / height,
+      1.5
+    );
+    const clampedZoom = Math.max(0.3, Math.min(2, fitZoom));
+    setZoom(clampedZoom);
+    // Center the DAG
+    const dagVisW = width * clampedZoom;
+    const dagVisH = height * clampedZoom;
+    setPan({
+      x: (cw - dagVisW) / (2 * clampedZoom),
+      y: (ch - dagVisH) / (2 * clampedZoom),
+    });
+  }, [nodes.size, width, height, containerSize]);
 
   // Build edges
   const edges: { from: DagNode; to: DagNode }[] = [];
@@ -228,9 +438,20 @@ const PipelineDag: React.FC<{
       <div className="dag-controls">
         <button className="secondary-button dag-ctrl-btn" onClick={() => setZoom((z) => Math.min(2, z * 1.2))}>+</button>
         <button className="secondary-button dag-ctrl-btn" onClick={() => setZoom((z) => Math.max(0.3, z * 0.8))}>-</button>
+        <button className="secondary-button dag-ctrl-btn" onClick={handleFitView}>Fit</button>
         <button className="secondary-button dag-ctrl-btn" onClick={handleResetView}>Reset</button>
         <span className="dag-zoom-label">{Math.round(zoom * 100)}%</span>
       </div>
+      <DagMinimap
+        nodes={nodes}
+        dagWidth={width}
+        dagHeight={height}
+        pan={pan}
+        zoom={zoom}
+        containerWidth={containerSize.w}
+        containerHeight={containerSize.h}
+        onClickMinimap={setPan}
+      />
       <div
         ref={containerRef}
         className="dag-canvas"
@@ -242,33 +463,53 @@ const PipelineDag: React.FC<{
         style={{ cursor: dragging ? 'grabbing' : 'grab' }}
       >
         <svg
-          width={width * zoom + 400}
-          height={height * zoom + 200}
+          width={Math.max(width * zoom + 400, containerSize.w)}
+          height={Math.max(height * zoom + 200, containerSize.h)}
           style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
         >
+          <defs>
+            <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--muted)" />
+            </marker>
+          </defs>
           <g transform={`scale(${zoom}) translate(${pan.x}, ${pan.y})`}>
             {edges.map((edge, i) => {
-              const x1 = edge.from.x + NODE_W;
-              const y1 = edge.from.y + NODE_H / 2;
-              const x2 = edge.to.x;
-              const y2 = edge.to.y + NODE_H / 2;
-              const cx = (x1 + x2) / 2;
+              const x1 = edge.from.x + NODE_W / 2;
+              const y1 = edge.from.y + NODE_H;
+              const x2 = edge.to.x + NODE_W / 2;
+              const y2 = edge.to.y;
+              const cy1 = y1 + V_GAP * 0.4;
+              const cy2 = y2 - V_GAP * 0.4;
+              const parentDone = edge.from.state === 'SUCCEEDED';
+              const edgeColor = parentDone ? stateColor(edge.from.state) : 'var(--border)';
+              const midX = (x1 + x2) / 2;
+              const midY = (y1 + y2) / 2;
+              // Count artifacts on this edge (parent outputs + child inputs)
+              const parentOutputCount = Object.keys(edge.from.outputs).length;
+              const childInputCount = Object.keys(edge.to.inputs).length;
+              const hasArtifacts = parentOutputCount > 0 || childInputCount > 0;
               return (
-                <path
-                  key={i}
-                  d={`M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`}
-                  fill="none"
-                  stroke="var(--border)"
-                  strokeWidth={2}
-                  markerEnd="url(#arrowhead)"
-                />
+                <g key={i}>
+                  <path
+                    d={`M ${x1} ${y1} C ${x1} ${cy1}, ${x2} ${cy2}, ${x2} ${y2}`}
+                    fill="none"
+                    stroke={edgeColor}
+                    strokeWidth={2}
+                    opacity={parentDone ? 0.8 : 0.4}
+                    markerEnd="url(#arrowhead)"
+                  />
+                  {hasArtifacts && (
+                    <circle
+                      cx={midX}
+                      cy={midY}
+                      r={3}
+                      fill={edgeColor}
+                      opacity={parentDone ? 0.9 : 0.5}
+                    />
+                  )}
+                </g>
               );
             })}
-            <defs>
-              <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-                <polygon points="0 0, 8 3, 0 6" fill="var(--muted)" />
-              </marker>
-            </defs>
           </g>
         </svg>
         <div
@@ -278,48 +519,134 @@ const PipelineDag: React.FC<{
             position: 'relative',
           }}
         >
-          {Array.from(nodes.values()).map((node) => (
-            <div
-              key={node.taskId}
-              className={`dag-node ${selectedTask === node.taskId ? 'selected' : ''}`}
-              style={{
-                left: node.x + pan.x,
-                top: node.y + pan.y,
-                width: NODE_W,
-                height: NODE_H,
-                borderLeftColor: stateColor(node.state),
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelectTask(selectedTask === node.taskId ? null : node.taskId);
-              }}
-            >
-              <div className="dag-node-name">{node.taskName}</div>
-              <div className="dag-node-meta">
-                <span className="dag-node-state" style={{ color: stateColor(node.state) }}>
-                  {TASK_STATUS_EMOJI[node.state] ?? ''} {node.state}
-                </span>
-                <span className="dag-node-time">{formatDuration(node.startTime, node.endTime)}</span>
+          {Array.from(nodes.values()).map((node) => {
+            const artifactCount = Object.keys(node.inputs).length + Object.keys(node.outputs).length;
+            return (
+              <div
+                key={node.taskId}
+                className={`dag-node ${selectedTask === node.taskId ? 'selected' : ''}`}
+                style={{
+                  left: node.x + pan.x,
+                  top: node.y + pan.y,
+                  width: NODE_W,
+                  height: NODE_H,
+                  borderLeftColor: stateColor(node.state),
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectTask(selectedTask === node.taskId ? null : node.taskId);
+                }}
+              >
+                <div className="dag-node-status-badge">
+                  <StatusIcon state={node.state} />
+                </div>
+                {artifactCount > 0 && (
+                  <div className="dag-node-artifact-badge">{artifactCount}</div>
+                )}
+                <div className="dag-node-name">{node.taskName}</div>
+                <div className="dag-node-meta">
+                  <span className="dag-node-state" style={{ color: stateColor(node.state) }}>
+                    {node.state}
+                  </span>
+                  <span className="dag-node-time">{formatDuration(node.startTime, node.endTime)}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
   );
 };
 
-// ── Task Detail Panel ───────────────────────────────────────────────────
+// ── Right Panel with Tabs ───────────────────────────────────────────────
 
-const TaskDetailPanel: React.FC<{
-  task: PipelineTaskDetail;
-  onClose: () => void;
-}> = ({ task, onClose }) => (
-  <div className="pipe-task-detail">
-    <div className="vai-detail-header">
-      <h3>{task.taskName}</h3>
-      <button className="vai-detail-close" onClick={onClose}>&times;</button>
+const PipelineSummaryPanel: React.FC<{ job: PipelineJob }> = ({ job }) => (
+  <div className="pipe-summary-content">
+    <div className="vai-detail-section">
+      <h4>Overview</h4>
+      <div className="vai-detail-grid">
+        <span className="vai-detail-label">State</span>
+        <span>{PIPELINE_STATUS_EMOJI[job.state] ?? ''} {job.state}</span>
+        <span className="vai-detail-label">Region</span>
+        <span>{job.region}</span>
+        <span className="vai-detail-label">Created</span>
+        <span>{formatTime(job.createTime)}</span>
+        <span className="vai-detail-label">Started</span>
+        <span>{formatTime(job.startTime)}</span>
+        <span className="vai-detail-label">Ended</span>
+        <span>{formatTime(job.endTime)}</span>
+        <span className="vai-detail-label">Duration</span>
+        <span>{formatDuration(job.startTime, job.endTime)}</span>
+        {job.serviceAccount && (
+          <>
+            <span className="vai-detail-label">Service Account</span>
+            <span className="vai-detail-mono" style={{ wordBreak: 'break-all' }}>{job.serviceAccount}</span>
+          </>
+        )}
+        {job.network && (
+          <>
+            <span className="vai-detail-label">Network</span>
+            <span className="vai-detail-mono" style={{ wordBreak: 'break-all' }}>{job.network}</span>
+          </>
+        )}
+        {job.templateUri && (
+          <>
+            <span className="vai-detail-label">Template</span>
+            <span className="vai-detail-mono" style={{ wordBreak: 'break-all' }}>{job.templateUri}</span>
+          </>
+        )}
+      </div>
     </div>
+
+    {job.labels && Object.keys(job.labels).length > 0 && (
+      <div className="vai-detail-section">
+        <h4>Labels</h4>
+        <div className="vai-detail-grid">
+          {Object.entries(job.labels).map(([k, v]) => (
+            <React.Fragment key={k}>
+              <span className="vai-detail-label">{k}</span>
+              <span className="vai-detail-mono">{v}</span>
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {job.runtimeConfig?.parameterValues && Object.keys(job.runtimeConfig.parameterValues).length > 0 && (
+      <div className="vai-detail-section">
+        <h4>Runtime Parameters</h4>
+        <div className="vai-detail-grid">
+          {Object.entries(job.runtimeConfig.parameterValues).map(([k, v]) => (
+            <React.Fragment key={k}>
+              <span className="vai-detail-label">{k}</span>
+              <span className="vai-detail-mono">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {job.runtimeConfig?.gcsOutputDirectory && (
+      <div className="vai-detail-section">
+        <h4>Output Directory</h4>
+        <div className="vai-detail-mono" style={{ padding: '4px 0', wordBreak: 'break-all' }}>
+          {job.runtimeConfig.gcsOutputDirectory}
+        </div>
+      </div>
+    )}
+
+    {job.error && (
+      <div className="vai-detail-section">
+        <h4>Error</h4>
+        <div className="vai-msg vai-msg-err">{job.error.message}</div>
+      </div>
+    )}
+  </div>
+);
+
+const NodeDetailPanel: React.FC<{ task: PipelineTaskDetail }> = ({ task }) => (
+  <div className="pipe-node-detail-content">
     <div className="vai-detail-section">
       <h4>Overview</h4>
       <div className="vai-detail-grid">
@@ -395,6 +722,40 @@ const TaskDetailPanel: React.FC<{
   </div>
 );
 
+type DetailPanelTab = 'summary' | 'node';
+
+const DagDetailPanel: React.FC<{
+  job: PipelineJob;
+  selectedTask: PipelineTaskDetail | null;
+  activeTab: DetailPanelTab;
+  onTabChange: (tab: DetailPanelTab) => void;
+}> = ({ job, selectedTask, activeTab, onTabChange }) => (
+  <div className="pipe-detail-panel">
+    <div className="pipe-detail-tabs">
+      <button
+        className={`pipe-detail-tab ${activeTab === 'summary' ? 'active' : ''}`}
+        onClick={() => onTabChange('summary')}
+      >
+        Pipeline Summary
+      </button>
+      <button
+        className={`pipe-detail-tab ${activeTab === 'node' ? 'active' : ''}`}
+        onClick={() => onTabChange('node')}
+        disabled={!selectedTask}
+      >
+        Node Details
+      </button>
+    </div>
+    <div className="pipe-detail-tab-content">
+      {activeTab === 'summary' && <PipelineSummaryPanel job={job} />}
+      {activeTab === 'node' && selectedTask && <NodeDetailPanel task={selectedTask} />}
+      {activeTab === 'node' && !selectedTask && (
+        <div className="empty-state" style={{ padding: '24px' }}>Select a node in the DAG to view its details.</div>
+      )}
+    </div>
+  </div>
+);
+
 // ── Main PipelinesTab ───────────────────────────────────────────────────
 
 type ViewMode = 'list' | 'dag';
@@ -417,6 +778,7 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
   const [activePipeline, setActivePipeline] = useState<PipelineJob | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
+  const [detailTab, setDetailTab] = useState<DetailPanelTab>('summary');
 
   useEffect(() => {
     (window as any).bq?.listProjects?.().then((res: any) => {
@@ -488,6 +850,7 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
         setActivePipeline(job);
         setViewMode('dag');
         setSelectedTask(null);
+        setDetailTab('summary');
         return;
       }
       // Otherwise fetch the full detail
@@ -499,6 +862,7 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
         setActivePipeline(res.data);
         setViewMode('dag');
         setSelectedTask(null);
+        setDetailTab('summary');
       } catch (err: any) {
         setError(String(err));
       } finally {
@@ -512,6 +876,12 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
     setViewMode('list');
     setActivePipeline(null);
     setSelectedTask(null);
+  }, []);
+
+  // When a task is selected, switch to node details tab
+  const handleSelectTask = useCallback((taskId: string | null) => {
+    setSelectedTask(taskId);
+    if (taskId) setDetailTab('node');
   }, []);
 
   const ALL_PIPELINE_STATES = [
@@ -623,6 +993,7 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
               {activePipeline.region} &middot; {formatDuration(activePipeline.startTime, activePipeline.endTime)}
             </span>
           </div>
+          <DagProgressBar tasks={activePipeline.taskDetails} />
           <div className="pipe-dag-actions">
             <button
               className="vai-link-btn"
@@ -639,33 +1010,18 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
           </div>
         </div>
 
-        {/* Runtime config summary */}
-        {activePipeline.runtimeConfig?.parameterValues &&
-          Object.keys(activePipeline.runtimeConfig.parameterValues).length > 0 && (
-            <details className="pipe-params-bar">
-              <summary>
-                Runtime Parameters ({Object.keys(activePipeline.runtimeConfig.parameterValues).length})
-              </summary>
-              <div className="vai-detail-grid" style={{ padding: '8px 0' }}>
-                {Object.entries(activePipeline.runtimeConfig.parameterValues).map(([k, v]) => (
-                  <React.Fragment key={k}>
-                    <span className="vai-detail-label">{k}</span>
-                    <span className="vai-detail-mono">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
-                  </React.Fragment>
-                ))}
-              </div>
-            </details>
-          )}
-
         <div className="pipe-dag-body">
           <PipelineDag
             tasks={activePipeline.taskDetails}
             selectedTask={selectedTask}
-            onSelectTask={setSelectedTask}
+            onSelectTask={handleSelectTask}
           />
-          {selectedTaskDetail && (
-            <TaskDetailPanel task={selectedTaskDetail} onClose={() => setSelectedTask(null)} />
-          )}
+          <DagDetailPanel
+            job={activePipeline}
+            selectedTask={selectedTaskDetail ?? null}
+            activeTab={detailTab}
+            onTabChange={setDetailTab}
+          />
         </div>
 
         {activePipeline.error && (

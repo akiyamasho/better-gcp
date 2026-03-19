@@ -1,13 +1,13 @@
 # Better GCP
 
-![Version](https://img.shields.io/badge/version-v3.3.0-blue)
+![Version](https://img.shields.io/badge/version-v3.5.0-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
 
 Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI. All data stays on your machine. No telemetry, no cloud backend.
 
 ## Download
 
-**[Download the latest DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-3.3.0-arm64.dmg)**
+**[Download the latest DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-3.5.0-arm64.dmg)**
 
 > **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
 > ```bash
@@ -26,6 +26,22 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 - Drag-and-drop upload and drag-out download
 - Batch selection with download, delete, and select-all
 - Create folders from the empty-space context menu
+- Browse buckets by project ID (enter any project to see its buckets)
+
+### Vertex AI Pipelines
+
+- Monitor pipeline runs across multiple regions
+- Interactive DAG visualization with pan/zoom canvas (top-to-bottom layout)
+- Minimap for quick navigation of large pipelines
+- Progress bar showing step completion with per-task state coloring
+- Click pipeline components to see inputs, outputs, status history, and errors
+- Right panel with Pipeline Summary and Node Details tabs
+- Status badges with animated spinner for running tasks
+- Artifact flow indicators on edges
+- Fit-to-view, zoom controls, and reset
+- Runtime parameters summary
+- Batch cancel and delete operations
+- Direct links to GCP Console and Cloud Logging
 
 ### Vertex AI Jobs
 

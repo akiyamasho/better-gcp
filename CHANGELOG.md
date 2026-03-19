@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.5.0] - 2026-03-19
+
+### Added
+- **Vertex AI Pipelines tab** — monitor pipeline runs with an interactive DAG visualization.
+  - Top-to-bottom DAG layout with pan/zoom canvas and minimap for navigation.
+  - Segmented progress bar showing step completion with per-task state coloring.
+  - Status badge icons (checkmark, X, animated spinner) on each node.
+  - Artifact count badges and flow indicators on edges.
+  - Right panel with "Pipeline Summary" and "Node Details" tabs.
+  - Fit-to-view button for auto-framing the entire graph.
+  - Pipeline list view with region/state filtering, batch cancel/delete, pagination.
+  - Runtime parameters summary, direct links to GCP Console and Cloud Logging.
+- **GCS project-based browsing** — enter any project ID in the sidebar to browse its buckets (persisted across sessions).
+
+### Changed
+- Updated AGENTS.md and CLAUDE.md with comprehensive agent onboarding docs and best practices.
+
 ## [3.3.0] - 2026-03-18
 
 ### Improved
