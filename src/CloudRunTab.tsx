@@ -2,20 +2,21 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CloudRunService } from '@shared/types';
 
 const SUPPORTED_REGIONS = ['us-west1', 'us-central1', 'us-east1', 'asia-northeast1'];
-const PROJECT_STORAGE_KEY = 'better-gcp:cloudrun-projects';
+const KNOWN_PROJECTS_KEY = 'better-gcp:cloudrun-known-projects';
+const ACTIVE_PROJECTS_KEY = 'better-gcp:cloudrun-active-projects';
 
-function readProjects(): string[] {
+function readStringList(key: string): string[] {
   try {
-    const raw = localStorage.getItem(PROJECT_STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-function writeProjects(projects: string[]) {
+function writeStringList(key: string, list: string[]) {
   try {
-    localStorage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(projects));
+    localStorage.setItem(key, JSON.stringify(list));
   } catch {
     // Ignore storage errors.
   }
@@ -53,8 +54,11 @@ type CloudRunTabProps = {
 };
 
 const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
-  const [projects, setProjects] = useState<string[]>(readProjects);
+  const [knownProjects, setKnownProjects] = useState<string[]>(() => readStringList(KNOWN_PROJECTS_KEY));
+  const [activeProjects, setActiveProjects] = useState<Set<string>>(() => new Set(readStringList(ACTIVE_PROJECTS_KEY)));
   const [projectInput, setProjectInput] = useState('');
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
+  const projectDropdownRef = React.useRef<HTMLDivElement>(null);
   const [regions, setRegions] = useState<string[]>(['us-west1']);
   const [services, setServices] = useState<CloudRunService[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,13 +70,20 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
   const [jumpIndex, setJumpIndex] = useState(0);
   const jumpInputRef = React.useRef<HTMLInputElement>(null);
 
+  const projects = useMemo(
+    () => knownProjects.filter((p) => activeProjects.has(p)),
+    [knownProjects, activeProjects]
+  );
+
   useEffect(() => {
-    if (projects.length > 0) return;
+    if (knownProjects.length > 0) return;
     (window as any).bq?.listProjects?.().then((res: any) => {
       if (res?.ok && res.data?.length > 0) {
         const first = res.data[0].id;
-        setProjects([first]);
-        writeProjects([first]);
+        setKnownProjects([first]);
+        setActiveProjects(new Set([first]));
+        writeStringList(KNOWN_PROJECTS_KEY, [first]);
+        writeStringList(ACTIVE_PROJECTS_KEY, [first]);
       }
     });
   }, []);
@@ -80,23 +91,56 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
   const addProject = useCallback(
     (id: string) => {
       const trimmed = id.trim();
-      if (!trimmed || projects.includes(trimmed)) return;
-      const next = [...projects, trimmed];
-      setProjects(next);
-      writeProjects(next);
+      if (!trimmed) return;
+      setKnownProjects((prev) => {
+        const next = prev.includes(trimmed) ? prev : [...prev, trimmed];
+        writeStringList(KNOWN_PROJECTS_KEY, next);
+        return next;
+      });
+      setActiveProjects((prev) => {
+        const next = new Set(prev);
+        next.add(trimmed);
+        writeStringList(ACTIVE_PROJECTS_KEY, [...next]);
+        return next;
+      });
     },
-    [projects]
+    []
   );
 
-  const removeProject = useCallback(
-    (id: string) => {
-      const next = projects.filter((p) => p !== id);
-      setProjects(next);
-      writeProjects(next);
-      setServices((prev) => prev.filter((s) => s.namespace !== id));
-    },
-    [projects]
-  );
+  const toggleProject = useCallback((id: string) => {
+    setActiveProjects((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      writeStringList(ACTIVE_PROJECTS_KEY, [...next]);
+      return next;
+    });
+  }, []);
+
+  const removeProject = useCallback((id: string) => {
+    setKnownProjects((prev) => {
+      const next = prev.filter((p) => p !== id);
+      writeStringList(KNOWN_PROJECTS_KEY, next);
+      return next;
+    });
+    setActiveProjects((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      writeStringList(ACTIVE_PROJECTS_KEY, [...next]);
+      return next;
+    });
+    setServices((prev) => prev.filter((s) => s.namespace !== id));
+  }, []);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (projectDropdownRef.current && !projectDropdownRef.current.contains(e.target as Node)) {
+        setShowProjectDropdown(false);
+      }
+    };
+    window.addEventListener('mousedown', onClick);
+    return () => window.removeEventListener('mousedown', onClick);
+  }, []);
 
   const fetchServices = useCallback(async () => {
     if (projects.length === 0 || regions.length === 0) return;
@@ -200,49 +244,70 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
       {/* Toolbar */}
       <div className="vai-toolbar">
         <div className="vai-toolbar-left">
-          <form
-            className="vai-project-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (projectInput.trim()) {
-                addProject(projectInput.trim());
-                setProjectInput('');
-              }
-            }}
-          >
-            <input
-              className="vai-project-input"
-              placeholder="Add project ID..."
-              value={projectInput}
-              onChange={(e) => setProjectInput(e.target.value)}
-            />
-            <button className="primary-button" type="submit">
-              Add
+          <div className="cr-project-dropdown" ref={projectDropdownRef}>
+            <button
+              className="cr-project-dropdown-trigger"
+              onClick={() => setShowProjectDropdown((v) => !v)}
+            >
+              Projects ({projects.length}/{knownProjects.length})
+              <span className="cr-dropdown-arrow">{showProjectDropdown ? '\u25B2' : '\u25BC'}</span>
             </button>
-          </form>
+            {showProjectDropdown && (
+              <div className="cr-project-dropdown-menu">
+                <form
+                  className="cr-project-dropdown-add"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (projectInput.trim()) {
+                      addProject(projectInput.trim());
+                      setProjectInput('');
+                    }
+                  }}
+                >
+                  <input
+                    className="cr-project-dropdown-input"
+                    placeholder="Add project ID..."
+                    value={projectInput}
+                    onChange={(e) => setProjectInput(e.target.value)}
+                    autoFocus
+                  />
+                  <button className="primary-button cr-project-dropdown-add-btn" type="submit">
+                    Add
+                  </button>
+                </form>
+                {knownProjects.length === 0 && (
+                  <div className="cr-project-dropdown-empty">
+                    No projects yet. Type a project ID above.
+                  </div>
+                )}
+                {knownProjects.map((p) => (
+                  <div key={p} className="cr-project-dropdown-item">
+                    <button
+                      className={`cr-project-dropdown-toggle ${activeProjects.has(p) ? 'active' : ''}`}
+                      onClick={() => toggleProject(p)}
+                    >
+                      <span className="cr-project-check">
+                        {activeProjects.has(p) ? '\u2705' : '\u2B1C'}
+                      </span>
+                      <span className="cr-project-id">{p}</span>
+                    </button>
+                    <button
+                      className="cr-project-remove"
+                      onClick={() => removeProject(p)}
+                      title="Remove project"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button className="secondary-button" onClick={fetchServices} disabled={loading}>
             Refresh
           </button>
         </div>
         <div className="vai-toolbar-right">
-          <div className="vai-filter-group">
-            <span className="vai-filter-label">Projects</span>
-            <div className="vai-chips">
-              {projects.map((p) => (
-                <button
-                  key={p}
-                  className="vai-chip active cr-project-chip"
-                  onClick={() => removeProject(p)}
-                  title="Click to remove"
-                >
-                  {p} &times;
-                </button>
-              ))}
-              {projects.length === 0 && (
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>No projects added</span>
-              )}
-            </div>
-          </div>
           <div className="vai-filter-group">
             <span className="vai-filter-label">Regions</span>
             <div className="vai-chips">

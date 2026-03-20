@@ -2063,8 +2063,173 @@ body {
   max-width: 80px;
 }
 
-.cr-project-chip {
+/* Cloud Run project dropdown */
+
+.cr-project-dropdown {
+  position: relative;
+}
+
+.cr-project-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cr-project-dropdown-trigger:hover {
+  border-color: var(--accent);
+}
+
+.cr-dropdown-arrow {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.cr-project-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 15;
+  min-width: 300px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.cr-project-dropdown-add {
+  display: flex;
+  gap: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.cr-project-dropdown-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  background: var(--panel);
+  color: var(--ink);
+  min-width: 0;
+}
+
+.cr-project-dropdown-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.cr-project-dropdown-add-btn {
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+}
+
+.cr-project-dropdown-empty {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 4px;
+}
+
+.cr-project-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cr-project-dropdown-toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.cr-project-dropdown-toggle:hover {
+  background: var(--panel-strong);
+}
+
+.cr-project-dropdown-toggle.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.cr-project-check {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.cr-project-id {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cr-project-remove {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  line-height: 1;
+  border-radius: 6px;
+}
+
+.cr-project-remove:hover {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+:root[data-theme='dark'] .cr-project-dropdown-trigger {
+  background: var(--panel);
+}
+
+:root[data-theme='dark'] .cr-project-dropdown-menu {
+  background: #1b2533;
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .cr-project-dropdown-input {
+  background: #0d1522;
+  color: var(--ink);
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .cr-project-dropdown-toggle:hover {
+  background: #121a27;
+}
+
+:root[data-theme='dark'] .cr-project-remove:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
 }
 
 .cr-traffic-list {
