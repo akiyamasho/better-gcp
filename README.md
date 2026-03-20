@@ -7,7 +7,8 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 
 ## Download
 
-**[Download the latest DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.0.0-arm64.dmg)**
+- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.0.0-arm64.dmg)**
+- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.0.0-arm64-mac.zip)**
 
 > **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
 > ```bash
