@@ -6,6 +6,8 @@ import type {
   DeleteRequest,
   DownloadManyRequest,
   DownloadRequest,
+  GetCloudRunServiceRequest,
+  ListCloudRunServicesRequest,
   ListCustomJobsRequest,
   ListPipelineJobsRequest,
   ListObjectsRequest,
@@ -50,6 +52,13 @@ contextBridge.exposeInMainWorld('pipelines', {
     ipcRenderer.invoke('pipelines:get', req),
   cancel: (jobName: string) => ipcRenderer.invoke('pipelines:cancel', jobName),
   delete: (jobName: string) => ipcRenderer.invoke('pipelines:delete', jobName),
+});
+
+contextBridge.exposeInMainWorld('cloudrun', {
+  listServices: (req: ListCloudRunServicesRequest) =>
+    ipcRenderer.invoke('cloudrun:list-services', req),
+  getService: (req: GetCloudRunServiceRequest) =>
+    ipcRenderer.invoke('cloudrun:get-service', req),
 });
 
 contextBridge.exposeInMainWorld('shell', {

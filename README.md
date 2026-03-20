@@ -1,13 +1,13 @@
 # Better GCP
 
-![Version](https://img.shields.io/badge/version-v3.6.0-blue)
+![Version](https://img.shields.io/badge/version-v4.0.0-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
 
 Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI. All data stays on your machine. No telemetry, no cloud backend.
 
 ## Download
 
-**[Download the latest DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-3.6.0-arm64.dmg)**
+**[Download the latest DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.0.0-arm64.dmg)**
 
 > **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
 > ```bash
@@ -21,14 +21,24 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 - Finder-like browsing with breadcrumbs and directory tree
 - Favorites and recents for fast bucket access
 - Quick Open (`Cmd/Ctrl+Shift+O`) for already-loaded items
-- Go to path (`Cmd/Ctrl+Shift+P`) for direct navigation
+- Go to path (`Cmd/Ctrl+Shift+G`) for direct navigation
 - Context menu actions: copy paths and gsutil commands
 - Drag-and-drop upload and drag-out download
 - Batch selection with download, delete, and select-all
 - Create folders from the empty-space context menu
 - Browse buckets by project ID (enter any project to see its buckets)
 
-### Vertex AI Pipelines
+### Cloud Run
+
+- Browse Cloud Run services across multiple projects and regions
+- Add/remove projects with persistent project chips
+- Service status (Ready/Not Ready), URL, container image, region at a glance
+- Click a service to view full details: container config, scaling, traffic split, conditions, environment variables, labels
+- Direct links to GCP Console (monitoring), Cloud Logging (filtered by service and region), and Revisions
+- Jump to service (`Cmd/Ctrl+Shift+O`) with regex search
+- Filter bar to search by name, project, region, or container image
+
+### AI Pipelines (Vertex AI)
 
 - Monitor pipeline runs across multiple regions
 - Interactive DAG visualization with pan/zoom canvas (top-to-bottom layout)
@@ -45,7 +55,7 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 - Auto-refresh for active pipelines (every 15s) with manual refresh button
 - Direct links to GCP Console and Cloud Logging
 
-### Vertex AI Jobs
+### AI Jobs (Vertex AI)
 
 - Monitor Vertex AI Custom Jobs across multiple regions (us-west1, us-central1, us-east1, asia-northeast1)
 - Jobs sorted by creation date (newest first) with region and state chip filters
@@ -60,7 +70,7 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 - Sidebar tree for projects, datasets, and tables with lazy loading
 - Favorite projects and favorite tables pinned to the top
 - Add projects manually with access validation
-- Quick Jump (`Cmd/Ctrl+Shift+P`) with regex search across loaded tables and datasets
+- Quick Jump (`Cmd/Ctrl+Shift+O`) with regex search across loaded tables and datasets
 - Middle-truncated names in the sidebar with full name on hover
 - Table preview on click (LIMIT 5 rows)
 - Query editor with `Cmd/Ctrl+Enter` to run, showing row count, duration, and bytes processed
@@ -81,7 +91,7 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 
 ![BigQuery Tab](./doc/02_bigquery.png)
 
-### Vertex AI Jobs
+### AI Jobs (Vertex AI)
 
 ![Vertex AI Jobs Tab](./doc/03_vertex-ai_custom-jobs.png)
 
@@ -118,7 +128,8 @@ make dmg
 
 ## Notes
 
-- Quick Open / Quick Jump only search already-loaded items. Expand projects and datasets in the sidebar to load them.
+- **Tab palette** (`Cmd/Ctrl+Shift+P`): quickly switch between tabs by typing — works like VS Code's command palette.
+- Quick Open / Quick Jump (`Cmd/Ctrl+Shift+O`) only search already-loaded items. Expand projects and datasets in the sidebar to load them.
 - Drag a file from the GCS list to the desktop to download via a temp file.
 - Drop local files or folders into the GCS list to upload to the current prefix.
 - BigQuery queries run using your Application Default Credentials project unless a specific project is set on the query tab.

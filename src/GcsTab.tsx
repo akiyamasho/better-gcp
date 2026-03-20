@@ -275,7 +275,7 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
         event.preventDefault();
         openSearch();
       }
-      if (isMeta && event.shiftKey && key === 'p') {
+      if (isMeta && event.shiftKey && key === 'g') {
         event.preventDefault();
         openPathModal();
       }
@@ -1231,7 +1231,7 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
                 <div className="modal-title">Go to Path</div>
                 <div className="modal-note">Jump to any gs://bucket/prefix/ you have access to.</div>
               </div>
-              <div className="modal-shortcut">Cmd/Ctrl+Shift+P</div>
+              <div className="modal-shortcut">Cmd/Ctrl+Shift+G</div>
             </div>
             <form
               className="modal-form"

@@ -2012,6 +2012,141 @@ body {
   background-size: 20px 20px;
 }
 
+/* Cloud Run tab */
+
+.cr-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.cr-search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.cr-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.cr-search-count {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.cr-status {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.cr-status-ready { color: #166534; }
+.cr-status-not-ready { color: #b91c1c; }
+.cr-status-unknown { color: #6b7280; }
+
+:root[data-theme='dark'] .cr-status-ready { color: #4ade80; }
+:root[data-theme='dark'] .cr-status-not-ready { color: #f87171; }
+:root[data-theme='dark'] .cr-status-unknown { color: #9ca3af; }
+
+.cr-url-cell {
+  max-width: 80px;
+}
+
+.cr-project-chip {
+  gap: 4px;
+}
+
+.cr-traffic-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cr-traffic-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--panel-strong);
+  font-size: 12px;
+}
+
+.cr-traffic-rev {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cr-traffic-pct {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.cr-traffic-latest {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.cr-condition {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.cr-condition-type {
+  font-weight: 500;
+}
+
+.cr-condition-msg {
+  color: var(--muted);
+  word-break: break-word;
+}
+
+.cr-quick-links {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+:root[data-theme='dark'] .cr-search-input {
+  background: #0d1522;
+  color: var(--ink);
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .cr-traffic-item {
+  background: #121a27;
+}
+
+/* Tab palette current indicator */
+
+.tab-palette-current {
+  border-left: 3px solid var(--accent);
+}
+
 @media (max-width: 960px) {
   .app {
     grid-template-columns: 1fr;

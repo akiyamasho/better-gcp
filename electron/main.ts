@@ -25,6 +25,7 @@ import {
 } from './bigquery';
 import { listCustomJobs, cancelCustomJob, deleteCustomJob } from './vertexai';
 import { listPipelineJobs, getPipelineJob, cancelPipelineJob, deletePipelineJob } from './vertexai-pipelines';
+import { listCloudRunServices, getCloudRunService } from './cloudrun';
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 
@@ -285,6 +286,22 @@ ipcMain.handle('pipelines:delete', async (_event, jobName: string) => {
   try {
     await deletePipelineJob(jobName);
     return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('cloudrun:list-services', async (_event, req) => {
+  try {
+    return { ok: true, data: await listCloudRunServices(req) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('cloudrun:get-service', async (_event, req) => {
+  try {
+    return { ok: true, data: await getCloudRunService(req) };
   } catch (err) {
     return { ok: false, error: String(err) };
   }

@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.0] - 2026-03-20
+
+### Added
+- **Cloud Run tab** — browse Cloud Run services across multiple projects and regions.
+  - Multi-project support with add/remove project chips (persisted across sessions).
+  - Service list with status, URL, project, region, and creation time.
+  - Detail panel with container config (image, port, CPU, memory), scaling (min/max instances), traffic split, conditions, environment variables, and labels.
+  - Direct links to GCP Console (monitoring), Cloud Logging (filtered by service and region), and Revisions.
+  - Jump to service modal (`Cmd+Shift+O`) with regex search across loaded services.
+  - Filter bar to search by name, project, region, or container image.
+- **Tab palette** (`Cmd+Shift+P`) — quickly switch between tabs by typing (autocomplete).
+
+### Changed
+- Renamed **Vertex AI Jobs** tab to **AI Jobs**.
+- Renamed **Pipelines** tab to **AI Pipelines**.
+- **Jump shortcut** within tabs is now `Cmd+Shift+O` (was `Cmd+Shift+P` in BigQuery).
+- **Go to Path** in Cloud Storage is now `Cmd+Shift+G` (was `Cmd+Shift+P`).
+- Updated AGENTS.md and CLAUDE.md with Cloud Run docs, updated file structure, and full release workflow with Slack notification.
+
 ## [3.6.0] - 2026-03-19
 
 ### Added

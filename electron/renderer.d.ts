@@ -6,11 +6,15 @@ import type {
   BqSavedQuery,
   BqTable,
   BqTablePreview,
+  CloudRunService,
   DeleteRequest,
   DownloadManyRequest,
   DownloadRequest,
   CreateFolderRequest,
   GcsBucket,
+  GetCloudRunServiceRequest,
+  ListCloudRunServicesRequest,
+  ListCloudRunServicesResponse,
   ListObjectsRequest,
   ListObjectsResponse,
   ListPipelineJobsRequest,
@@ -55,6 +59,10 @@ declare global {
       get: (req: { projectId: string; region: string; pipelineJobId: string }) => Promise<IpcResult<PipelineJob>>;
       cancel: (jobName: string) => Promise<{ ok: boolean; error?: string }>;
       delete: (jobName: string) => Promise<{ ok: boolean; error?: string }>;
+    };
+    cloudrun: {
+      listServices: (req: ListCloudRunServicesRequest) => Promise<IpcResult<ListCloudRunServicesResponse>>;
+      getService: (req: GetCloudRunServiceRequest) => Promise<IpcResult<CloudRunService>>;
     };
     shell: {
       openExternal: (url: string) => Promise<void>;

@@ -19,11 +19,12 @@ A local-only Electron desktop app for browsing Google Cloud Platform services wi
 
 ```
 src/                      # Renderer process (React UI)
-  App.tsx                 # Tab switcher (ServiceTab union + TAB_ORDER array)
+  App.tsx                 # Tab switcher (ServiceTab union + TAB_ORDER array + tab palette)
   GcsTab.tsx              # Cloud Storage browser
   BigQueryTab.tsx         # BigQuery editor + results
-  VertexAITab.tsx         # Vertex AI custom jobs
-  PipelinesTab.tsx        # Vertex AI Pipelines with DAG visualization
+  VertexAITab.tsx         # AI Jobs (Vertex AI custom jobs)
+  PipelinesTab.tsx        # AI Pipelines (Vertex AI Pipelines with DAG visualization)
+  CloudRunTab.tsx         # Cloud Run services (multi-project, details, logs)
   main.tsx                # React entry point
   styles.css              # ALL styling (one file, CSS variables, no component lib)
 
@@ -36,6 +37,7 @@ electron/                 # Main process (Electron backend)
   bigquery.ts             # BigQuery operations (@google-cloud/bigquery)
   vertexai.ts             # Vertex AI custom jobs (REST)
   vertexai-pipelines.ts   # Vertex AI Pipelines (REST)
+  cloudrun.ts             # Cloud Run services (REST via Knative serving API)
   gcloud-env.ts           # Loads gcloud auth environment
 
 shared/types.ts           # Frontend-visible types (MUST stay in sync with electron/types.ts)
@@ -83,7 +85,7 @@ Renderer <-> Main communication uses Electron IPC:
 { ok: boolean, error?: string }
 ```
 
-**Current namespaces:** `gcs`, `bq`, `vertexai`, `pipelines`, `shell`
+**Current namespaces:** `gcs`, `bq`, `vertexai`, `pipelines`, `cloudrun`, `shell`
 
 ### Adding a New Tab / Service
 
@@ -126,6 +128,8 @@ Renderer <-> Main communication uses Electron IPC:
 - **Vertex AI (Jobs + Pipelines)**: Manual REST calls via `google-auth-library` `GoogleAuth.getClient()`
   - Endpoint pattern: `https://{region}-aiplatform.googleapis.com/v1/...`
   - Region extracted from resource name: `name.split('/')[3]`
+- **Cloud Run**: Knative serving REST API via `google-auth-library`
+  - Endpoint pattern: `https://{region}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/{projectId}/services`
 - Supported regions: `us-west1`, `us-central1`, `us-east1`, `asia-northeast1`
 
 ## Before Pushing
@@ -138,20 +142,54 @@ Renderer <-> Main communication uses Electron IPC:
 
 ## Releasing
 
-1. Bump `version` in `package.json`
-2. Update `README.md` (version badge, download link, feature list)
-3. Add entry to `CHANGELOG.md`
-4. Commit all changes
-5. `npm run build && npm run package`
-6. Create annotated tag: `git tag -a vX.Y.Z -m "vX.Y.Z - summary"`
-7. Push: `git push origin main && git push origin vX.Y.Z`
-8. Create GitHub release with packaged files:
+Full end-to-end release workflow (run in order):
+
+1. **Update version and docs:**
+   - Bump `version` in `package.json`
+   - Update `README.md`: version badge, download link (version in URL), feature list for new features
+   - Add entry to `CHANGELOG.md` under the new version header
+   - Commit: `git commit -am "chore: bump version to X.Y.Z"`
+
+2. **Build and package:**
+   ```bash
+   npm run build && npm run package
+   ```
+
+3. **Tag and push:**
+   ```bash
+   git push origin main
+   git tag -a vX.Y.Z -m "vX.Y.Z - summary"
+   git push origin vX.Y.Z
+   ```
+
+4. **Create GitHub release with packaged files:**
    ```bash
    gh release create vX.Y.Z \
      "dist/Better GCP-X.Y.Z-arm64-mac.zip" \
      "dist/Better GCP-X.Y.Z-arm64.dmg" \
-     --title "vX.Y.Z - Title" --notes "changelog"
+     --title "vX.Y.Z - Title" --notes "$(cat <<'EOF'
+   ## What's New
+   - Feature 1
+   - Feature 2
+
+   ## Download
+   - **DMG** (Apple Silicon): `Better GCP-X.Y.Z-arm64.dmg`
+   - **ZIP** (Apple Silicon): `Better GCP-X.Y.Z-arm64-mac.zip`
+
+   > macOS quarantine fix: `xattr -d com.apple.quarantine "/Applications/Better GCP.app"`
+   EOF
+   )"
    ```
+
+5. **Update README with release asset links:**
+   - Add a commit linking the packaged files from the GitHub release to the README download section
+   - Include the `xattr` quarantine disclaimer
+   - Push: `git push origin main`
+
+6. **Notify on Slack:**
+   - Use the Slack MCP tool to post in `#zp-akiyamasho` tagging `@akiyamasho`
+   - Include the release version, changelog highlights, and download link
+   - Example: `New Better GCP vX.Y.Z released! <changelog summary>. Download: <release URL>`
 
 ## Git Conventions
 
@@ -171,7 +209,7 @@ Use **Conventional Commits**:
 - `perf`: Performance improvement
 
 ### Scopes
-`gcs`, `bigquery`, `vertex-ai`, `pipelines`, `ui`, `electron`
+`gcs`, `bigquery`, `vertex-ai`, `pipelines`, `cloud-run`, `ui`, `electron`
 
 ### Rules
 - Lowercase description, no period at end

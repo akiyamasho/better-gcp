@@ -204,3 +204,53 @@ export type ListPipelineJobsResponse = {
   jobs: PipelineJob[];
   nextPageToken?: string;
 };
+
+// Cloud Run
+
+export type CloudRunRevision = {
+  revisionName: string;
+  percent: number;
+  latestRevision: boolean;
+};
+
+export type CloudRunService = {
+  name: string;
+  namespace: string;
+  region: string;
+  uid: string;
+  generation: number;
+  createTime: string;
+  updateTime: string;
+  creator: string;
+  lastModifier: string;
+  url: string;
+  latestReadyRevision: string;
+  latestCreatedRevision: string;
+  conditions: { type: string; status: string; lastTransitionTime?: string; message?: string }[];
+  traffic: CloudRunRevision[];
+  containerImage: string;
+  containerPort: number;
+  serviceAccount: string;
+  maxInstances: string;
+  minInstances: string;
+  cpuLimit: string;
+  memoryLimit: string;
+  env: { name: string; value: string }[];
+  labels: Record<string, string>;
+  ingress: string;
+};
+
+export type ListCloudRunServicesRequest = {
+  projectId: string;
+  region: string;
+};
+
+export type ListCloudRunServicesResponse = {
+  services: CloudRunService[];
+};
+
+export type GetCloudRunServiceRequest = {
+  projectId: string;
+  region: string;
+  serviceName: string;
+};

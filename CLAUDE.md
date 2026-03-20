@@ -8,11 +8,12 @@ A local-only Electron + React + TypeScript app for browsing GCP services with a 
 
 ```
 src/                  # React frontend (one file per tab)
-  App.tsx             # Tab switcher (ServiceTab union type + TAB_ORDER array)
+  App.tsx             # Tab switcher (ServiceTab union type + TAB_ORDER array + tab palette)
   GcsTab.tsx          # Cloud Storage browser (sidebar + file listing)
   BigQueryTab.tsx     # BigQuery editor + results
-  VertexAITab.tsx     # Vertex AI custom jobs
-  PipelinesTab.tsx    # Vertex AI Pipelines with DAG visualization
+  VertexAITab.tsx     # AI Jobs (Vertex AI custom jobs)
+  PipelinesTab.tsx    # AI Pipelines (Vertex AI Pipelines with DAG visualization)
+  CloudRunTab.tsx     # Cloud Run services (multi-project, details, logs)
   styles.css          # ALL styling lives here (CSS variables, no component lib)
 
 electron/             # Electron main process
@@ -24,6 +25,7 @@ electron/             # Electron main process
   bigquery.ts         # BigQuery operations (@google-cloud/bigquery)
   vertexai.ts         # Vertex AI custom jobs (REST via google-auth-library)
   vertexai-pipelines.ts # Vertex AI Pipelines (REST via google-auth-library)
+  cloudrun.ts         # Cloud Run services (REST via Knative serving API)
   gcloud-env.ts       # Loads gcloud auth environment
 
 shared/types.ts       # Frontend-visible types (must stay in sync with electron/types.ts)
@@ -108,7 +110,7 @@ docs: <change>                     # Documentation
 chore: <change>                    # Build, deps, config
 ```
 
-Components: `gcs`, `bigquery`, `vertex-ai`, `pipelines`, `ui`, `electron`
+Components: `gcs`, `bigquery`, `vertex-ai`, `pipelines`, `cloud-run`, `ui`, `electron`
 
 Examples:
 ```
@@ -124,6 +126,8 @@ style(ui): improve tab hover transitions
 - **Vertex AI**: Manual REST calls via `google-auth-library` `GoogleAuth.getClient()`
   - Endpoint pattern: `https://{region}-aiplatform.googleapis.com/v1/...`
   - Region extracted from resource name: `name.split('/')[3]`
+- **Cloud Run**: Knative serving REST API via `google-auth-library`
+  - Endpoint pattern: `https://{region}-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/{projectId}/services`
 - Supported regions: `us-west1`, `us-central1`, `us-east1`, `asia-northeast1`
 
 ## Don'ts

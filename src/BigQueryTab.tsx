@@ -676,7 +676,7 @@ const BigQueryTab = ({ isActive = true }: BigQueryTabProps) => {
     if (!isActive) return;
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.shiftKey && e.key === 'p') {
+      if (mod && e.shiftKey && e.key.toLowerCase() === 'o') {
         e.preventDefault();
         setShowQuickJump(true);
         setQuickJumpQuery('');
@@ -1094,7 +1094,7 @@ const BigQueryTab = ({ isActive = true }: BigQueryTabProps) => {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <span className="modal-title">Quick Jump</span>
-              <span className="modal-shortcut">Cmd+Shift+P</span>
+              <span className="modal-shortcut">Cmd+Shift+O</span>
             </div>
             <div className="modal-note">Supports regex patterns</div>
             <input
