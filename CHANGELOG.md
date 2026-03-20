@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.0.1] - 2026-03-21
+
+### Fixed
+- **Cloud Run project selector** — replaced one-shot chips with a toggleable dropdown. Previously added projects stay in the list and can be enabled/disabled without re-typing. Add new projects inline from the same dropdown.
+
 ## [4.0.0] - 2026-03-20
 
 ### Added
