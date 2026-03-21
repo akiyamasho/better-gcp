@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.1.0] - 2026-03-21
+
+### Added
+- **Searchable region dropdown** across all tabs (AI Jobs, AI Pipelines, Cloud Run) — replaces static region chips with a searchable multi-select dropdown supporting all GCP regions. Type to filter, click to toggle, add custom regions on the fly.
+- Shared `RegionSelect` component used by all tabs for consistent UX.
+
 ## [4.0.1] - 2026-03-21
 
 ### Fixed

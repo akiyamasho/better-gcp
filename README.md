@@ -1,14 +1,14 @@
 # Better GCP
 
-![Version](https://img.shields.io/badge/version-v4.0.1-blue)
+![Version](https://img.shields.io/badge/version-v4.1.0-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
 
 Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI. All data stays on your machine. No telemetry, no cloud backend.
 
 ## Download
 
-- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.0.1-arm64.dmg)**
-- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.0.1-arm64-mac.zip)**
+- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.1.0-arm64.dmg)**
+- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.1.0-arm64-mac.zip)**
 
 > **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
 > ```bash
@@ -58,7 +58,7 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 
 ### AI Jobs (Vertex AI)
 
-- Monitor Vertex AI Custom Jobs across multiple regions (us-west1, us-central1, us-east1, asia-northeast1)
+- Monitor Vertex AI Custom Jobs across multiple regions (searchable dropdown with all GCP regions)
 - Jobs sorted by creation date (newest first) with region and state chip filters
 - Color-coded status with emoji indicators (Running, Succeeded, Failed, Queued, etc.)
 - Bulk cancel active jobs or delete completed jobs

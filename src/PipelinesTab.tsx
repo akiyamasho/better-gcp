@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PipelineJob, PipelineTaskDetail } from '@shared/types';
-
-const SUPPORTED_REGIONS = ['us-west1', 'us-central1', 'us-east1', 'asia-northeast1'];
+import RegionSelect from './RegionSelect';
 const PAGE_SIZE = 20;
 
 const PIPELINE_STATUS_EMOJI: Record<string, string> = {
@@ -997,9 +996,7 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
     setTimeout(fetchJobs, 1500);
   }, [deletableJobs, fetchJobs]);
 
-  const toggleRegion = useCallback((r: string) => {
-    setRegions((prev) => (prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]));
-  }, []);
+  const handleRegionsChange = useCallback((next: string[]) => setRegions(next), []);
 
   const toggleStateFilter = useCallback((s: string) => {
     setStateFilter((prev) => {
@@ -1103,20 +1100,7 @@ const PipelinesTab: React.FC<{ isActive?: boolean }> = () => {
           </button>
         </div>
         <div className="vai-toolbar-right">
-          <div className="vai-filter-group">
-            <span className="vai-filter-label">Regions</span>
-            <div className="vai-chips">
-              {SUPPORTED_REGIONS.map((r) => (
-                <button
-                  key={r}
-                  className={`vai-chip ${regions.includes(r) ? 'active' : ''}`}
-                  onClick={() => toggleRegion(r)}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
+          <RegionSelect regions={regions} onChange={handleRegionsChange} />
           <div className="vai-filter-group">
             <span className="vai-filter-label">State</span>
             <div className="vai-chips">

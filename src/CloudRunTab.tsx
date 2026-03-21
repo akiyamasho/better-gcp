@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CloudRunService } from '@shared/types';
-
-const SUPPORTED_REGIONS = ['us-west1', 'us-central1', 'us-east1', 'asia-northeast1'];
+import RegionSelect from './RegionSelect';
 const KNOWN_PROJECTS_KEY = 'better-gcp:cloudrun-known-projects';
 const ACTIVE_PROJECTS_KEY = 'better-gcp:cloudrun-active-projects';
 
@@ -176,9 +175,7 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
     if (projects.length > 0) fetchServices();
   }, [projects, regions, fetchServices]);
 
-  const toggleRegion = useCallback((r: string) => {
-    setRegions((prev) => (prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]));
-  }, []);
+  const handleRegionsChange = useCallback((next: string[]) => setRegions(next), []);
 
   const filteredServices = useMemo(() => {
     if (!searchQuery) return services;
@@ -308,20 +305,7 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
           </button>
         </div>
         <div className="vai-toolbar-right">
-          <div className="vai-filter-group">
-            <span className="vai-filter-label">Regions</span>
-            <div className="vai-chips">
-              {SUPPORTED_REGIONS.map((r) => (
-                <button
-                  key={r}
-                  className={`vai-chip ${regions.includes(r) ? 'active' : ''}`}
-                  onClick={() => toggleRegion(r)}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
+          <RegionSelect regions={regions} onChange={handleRegionsChange} />
         </div>
       </div>
 

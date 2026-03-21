@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { VertexAICustomJob } from '@shared/types';
-
-const SUPPORTED_REGIONS = ['us-west1', 'us-central1', 'us-east1', 'asia-northeast1'];
+import RegionSelect from './RegionSelect';
 
 const STATUS_EMOJI: Record<string, string> = {
   UNSPECIFIED: '\u{1F914}',
@@ -215,11 +214,7 @@ const VertexAITab = () => {
     setTimeout(fetchJobs, 1500);
   }, [deletableJobs, fetchJobs]);
 
-  const toggleRegion = useCallback((r: string) => {
-    setRegions((prev) =>
-      prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]
-    );
-  }, []);
+  const handleRegionsChange = useCallback((next: string[]) => setRegions(next), []);
 
   const toggleStateFilter = useCallback((s: string) => {
     setStateFilter((prev) => {
@@ -259,20 +254,7 @@ const VertexAITab = () => {
           </button>
         </div>
         <div className="vai-toolbar-right">
-          <div className="vai-filter-group">
-            <span className="vai-filter-label">Regions</span>
-            <div className="vai-chips">
-              {SUPPORTED_REGIONS.map((r) => (
-                <button
-                  key={r}
-                  className={`vai-chip ${regions.includes(r) ? 'active' : ''}`}
-                  onClick={() => toggleRegion(r)}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
+          <RegionSelect regions={regions} onChange={handleRegionsChange} />
           <div className="vai-filter-group">
             <span className="vai-filter-label">State</span>
             <div className="vai-chips">

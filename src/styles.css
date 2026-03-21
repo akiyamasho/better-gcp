@@ -2012,6 +2012,146 @@ body {
   background-size: 20px 20px;
 }
 
+/* Region select dropdown */
+
+.region-select {
+  position: relative;
+}
+
+.region-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.region-select-trigger:hover {
+  border-color: var(--accent);
+}
+
+.region-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 15;
+  min-width: 280px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.region-select-search {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.region-select-input {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.region-select-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.region-select-add-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.region-select-add-btn:hover {
+  background: var(--accent-soft);
+}
+
+.region-select-list {
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.region-select-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.region-select-item:hover {
+  background: var(--panel-strong);
+}
+
+.region-select-item.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.region-select-custom {
+  color: var(--accent);
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.region-select-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+:root[data-theme='dark'] .region-select-trigger {
+  background: var(--panel);
+}
+
+:root[data-theme='dark'] .region-select-menu {
+  background: #1b2533;
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .region-select-input {
+  background: #0d1522;
+  color: var(--ink);
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .region-select-item:hover {
+  background: #121a27;
+}
+
 /* Cloud Run tab */
 
 .cr-search-bar {
