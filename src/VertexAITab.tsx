@@ -62,7 +62,13 @@ function logsUrl(job: VertexAICustomJob, projectId: string): string {
 const VertexAITab = () => {
   const [projectId, setProjectId] = useState('');
   const [projectInput, setProjectInput] = useState('');
-  const [regions, setRegions] = useState<string[]>(['us-west1']);
+  const [regions, setRegions] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('better-gcp:vertexai-regions');
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return ['us-west1'];
+  });
   const [stateFilter, setStateFilter] = useState<Set<string>>(new Set());
   const [jobs, setJobs] = useState<VertexAICustomJob[]>([]);
   const [loading, setLoading] = useState(false);
@@ -214,7 +220,10 @@ const VertexAITab = () => {
     setTimeout(fetchJobs, 1500);
   }, [deletableJobs, fetchJobs]);
 
-  const handleRegionsChange = useCallback((next: string[]) => setRegions(next), []);
+  const handleRegionsChange = useCallback((next: string[]) => {
+    setRegions(next);
+    try { localStorage.setItem('better-gcp:vertexai-regions', JSON.stringify(next)); } catch { /* ignore */ }
+  }, []);
 
   const toggleStateFilter = useCallback((s: string) => {
     setStateFilter((prev) => {

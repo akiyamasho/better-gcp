@@ -58,7 +58,13 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
   const [projectInput, setProjectInput] = useState('');
   const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const projectDropdownRef = React.useRef<HTMLDivElement>(null);
-  const [regions, setRegions] = useState<string[]>(['us-west1']);
+  const [regions, setRegions] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('better-gcp:cloudrun-regions');
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return ['us-west1'];
+  });
   const [services, setServices] = useState<CloudRunService[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -175,7 +181,10 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
     if (projects.length > 0) fetchServices();
   }, [projects, regions, fetchServices]);
 
-  const handleRegionsChange = useCallback((next: string[]) => setRegions(next), []);
+  const handleRegionsChange = useCallback((next: string[]) => {
+    setRegions(next);
+    try { localStorage.setItem('better-gcp:cloudrun-regions', JSON.stringify(next)); } catch { /* ignore */ }
+  }, []);
 
   const filteredServices = useMemo(() => {
     if (!searchQuery) return services;
@@ -277,7 +286,12 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
                     No projects yet. Type a project ID above.
                   </div>
                 )}
-                {knownProjects.map((p) => (
+                {[...knownProjects].sort((a, b) => {
+                  const aActive = activeProjects.has(a) ? 0 : 1;
+                  const bActive = activeProjects.has(b) ? 0 : 1;
+                  if (aActive !== bActive) return aActive - bActive;
+                  return a.localeCompare(b);
+                }).map((p) => (
                   <div key={p} className="cr-project-dropdown-item">
                     <button
                       className={`cr-project-dropdown-toggle ${activeProjects.has(p) ? 'active' : ''}`}

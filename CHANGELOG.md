@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.1.1] - 2026-03-21
+
+### Fixed
+- **Region selections now persist** across app restarts — each tab (AI Jobs, AI Pipelines, Cloud Run) saves its selected regions to localStorage. Custom regions added via the dropdown also persist.
+
 ## [4.1.0] - 2026-03-21
 
 ### Added

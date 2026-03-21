@@ -68,10 +68,14 @@ const RegionSelect = ({ regions, onChange }: RegionSelectProps) => {
   }, [customRegions]);
 
   const filtered = useMemo(() => {
-    if (!query) return allRegions;
-    const lower = query.toLowerCase();
-    return allRegions.filter((r) => r.includes(lower));
-  }, [allRegions, query]);
+    const base = query ? allRegions.filter((r) => r.includes(query.toLowerCase())) : allRegions;
+    return [...base].sort((a, b) => {
+      const aActive = regions.includes(a) ? 0 : 1;
+      const bActive = regions.includes(b) ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      return a.localeCompare(b);
+    });
+  }, [allRegions, query, regions]);
 
   const exactMatch = useMemo(
     () => allRegions.includes(query.trim().toLowerCase()),
