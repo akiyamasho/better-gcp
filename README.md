@@ -1,14 +1,14 @@
 # Better GCP
 
-![Version](https://img.shields.io/badge/version-v4.1.1-blue)
+![Version](https://img.shields.io/badge/version-v4.2.0-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
 
 Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI. All data stays on your machine. No telemetry, no cloud backend.
 
 ## Download
 
-- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.1.1-arm64.dmg)**
-- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.1.1-arm64-mac.zip)**
+- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.2.0-arm64.dmg)**
+- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.2.0-arm64-mac.zip)**
 
 > **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
 > ```bash
@@ -38,6 +38,18 @@ Local-only Electron app for browsing Google Cloud Platform services with a Finde
 - Direct links to GCP Console (monitoring), Cloud Logging (filtered by service and region), and Revisions
 - Jump to service (`Cmd/Ctrl+Shift+O`) with regex search
 - Filter bar to search by name, project, region, or container image
+
+### Compute Engine
+
+- Browse GCE VM instances across multiple projects and zones
+- Add/remove projects with toggleable dropdown (persisted across sessions)
+- Searchable zone selector supporting all GCP zones
+- Instance list with status, machine type, internal/external IPs, and creation time
+- Click an instance to view full details: network interfaces, disks, scheduling, metadata, labels, tags, service account, and scopes
+- Status indicators for RUNNING, STOPPED, PROVISIONING, and other states
+- Direct links to GCP Console (instance details) and Cloud Logging (filtered by instance ID)
+- Jump to instance (`Cmd/Ctrl+Shift+O`) with regex search
+- Filter bar to search by name, project, zone, machine type, or IP address
 
 ### AI Pipelines (Vertex AI)
 

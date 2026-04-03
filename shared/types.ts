@@ -254,3 +254,42 @@ export type GetCloudRunServiceRequest = {
   region: string;
   serviceName: string;
 };
+
+// GCE (Google Compute Engine)
+
+export type GceInstance = {
+  name: string;
+  id: string;
+  zone: string;
+  projectId: string;
+  status: 'PROVISIONING' | 'STAGING' | 'RUNNING' | 'STOPPING' | 'STOPPED' | 'SUSPENDING' | 'SUSPENDED' | 'TERMINATED';
+  machineType: string;
+  cpuPlatform: string;
+  creationTimestamp: string;
+  description: string;
+  internalIP: string;
+  externalIP: string;
+  serviceAccount: string;
+  scopes: string[];
+  labels: Record<string, string>;
+  tags: string[];
+  metadata: { key: string; value: string }[];
+  disks: { deviceName: string; source: string; mode: string; boot: boolean }[];
+  networkInterfaces: { network: string; networkIP: string; accessConfigs: { natIP?: string; name: string }[] }[];
+  canIpForward: boolean;
+  fingerprint: string;
+  scheduling: {
+    automaticRestart: boolean;
+    onHostMaintenance: string;
+    preemptible: boolean;
+  };
+};
+
+export type ListGceInstancesRequest = {
+  projectId: string;
+  zone: string;
+};
+
+export type ListGceInstancesResponse = {
+  instances: GceInstance[];
+};

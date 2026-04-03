@@ -12,9 +12,12 @@ import type {
   DownloadRequest,
   CreateFolderRequest,
   GcsBucket,
+  GceInstance,
   GetCloudRunServiceRequest,
   ListCloudRunServicesRequest,
   ListCloudRunServicesResponse,
+  ListGceInstancesRequest,
+  ListGceInstancesResponse,
   ListObjectsRequest,
   ListObjectsResponse,
   ListPipelineJobsRequest,
@@ -63,6 +66,9 @@ declare global {
     cloudrun: {
       listServices: (req: ListCloudRunServicesRequest) => Promise<IpcResult<ListCloudRunServicesResponse>>;
       getService: (req: GetCloudRunServiceRequest) => Promise<IpcResult<CloudRunService>>;
+    };
+    gce: {
+      listInstances: (req: ListGceInstancesRequest) => Promise<IpcResult<ListGceInstancesResponse>>;
     };
     shell: {
       openExternal: (url: string) => Promise<void>;

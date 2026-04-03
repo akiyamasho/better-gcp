@@ -9,6 +9,7 @@ import type {
   GetCloudRunServiceRequest,
   ListCloudRunServicesRequest,
   ListCustomJobsRequest,
+  ListGceInstancesRequest,
   ListPipelineJobsRequest,
   ListObjectsRequest,
   StartDragRequest,
@@ -59,6 +60,11 @@ contextBridge.exposeInMainWorld('cloudrun', {
     ipcRenderer.invoke('cloudrun:list-services', req),
   getService: (req: GetCloudRunServiceRequest) =>
     ipcRenderer.invoke('cloudrun:get-service', req),
+});
+
+contextBridge.exposeInMainWorld('gce', {
+  listInstances: (req: ListGceInstancesRequest) =>
+    ipcRenderer.invoke('gce:list-instances', req),
 });
 
 contextBridge.exposeInMainWorld('shell', {

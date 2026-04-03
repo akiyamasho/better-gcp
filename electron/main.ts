@@ -26,6 +26,7 @@ import {
 import { listCustomJobs, cancelCustomJob, deleteCustomJob } from './vertexai';
 import { listPipelineJobs, getPipelineJob, cancelPipelineJob, deletePipelineJob } from './vertexai-pipelines';
 import { listCloudRunServices, getCloudRunService } from './cloudrun';
+import { listGceInstances } from './gce';
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 
@@ -302,6 +303,14 @@ ipcMain.handle('cloudrun:list-services', async (_event, req) => {
 ipcMain.handle('cloudrun:get-service', async (_event, req) => {
   try {
     return { ok: true, data: await getCloudRunService(req) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('gce:list-instances', async (_event, req) => {
+  try {
+    return { ok: true, data: await listGceInstances(req) };
   } catch (err) {
     return { ok: false, error: String(err) };
   }

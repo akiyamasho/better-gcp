@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.2.0] - 2026-04-03
+
+### Added
+- **Compute Engine tab** — browse GCE VM instances across multiple projects and zones.
+  - Multi-project support with toggleable dropdown (add/remove projects, persisted across sessions).
+  - Searchable zone selector with all GCP zones (us-west1-a, us-central1-a, asia-northeast1-a, etc.).
+  - Instance list with status (RUNNING, STOPPED, etc.), machine type, internal/external IPs, and creation time.
+  - Detail panel with network interfaces, disks, scheduling, metadata, labels, tags, service account, and OAuth scopes.
+  - Direct links to GCP Console (instance details) and Cloud Logging (filtered by instance ID).
+  - Jump to instance modal (`Cmd+Shift+O`) with regex search across loaded instances.
+  - Filter bar to search by name, project, zone, machine type, or IP address.
+
 ## [4.1.1] - 2026-03-21
 
 ### Fixed
