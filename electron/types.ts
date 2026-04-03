@@ -294,6 +294,23 @@ export type GceInstance = {
     onHostMaintenance: string;
     preemptible: boolean;
   };
+  isTpu?: false;
+};
+
+export type TpuInstance = {
+  name: string;
+  zone: string;
+  projectId: string;
+  state: string;
+  acceleratorType: string;
+  runtimeVersion: string;
+  creationTimestamp: string;
+  description: string;
+  networkEndpoints: { ipAddress: string; port: number }[];
+  serviceAccount: string;
+  labels: Record<string, string>;
+  cidrBlock: string;
+  isTpu: true;
 };
 
 export type ListGceInstancesRequest = {
@@ -302,5 +319,5 @@ export type ListGceInstancesRequest = {
 };
 
 export type ListGceInstancesResponse = {
-  instances: GceInstance[];
+  instances: (GceInstance | TpuInstance)[];
 };

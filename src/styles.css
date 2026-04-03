@@ -2210,6 +2210,23 @@ body {
 :root[data-theme='dark'] .cr-status-not-ready { color: #f87171; }
 :root[data-theme='dark'] .cr-status-unknown { color: #9ca3af; }
 
+.gce-tpu-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 6px;
+  background: #fbbf24;
+  color: #78350f;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+:root[data-theme='dark'] .gce-tpu-tag {
+  background: #92400e;
+  color: #fef3c7;
+}
+
 .cr-url-cell {
   max-width: 80px;
 }

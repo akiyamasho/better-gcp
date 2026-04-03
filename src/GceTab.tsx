@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import type { GceInstance } from '@shared/types';
+import type { GceInstance, TpuInstance } from '@shared/types';
+
+type ComputeInstance = GceInstance | TpuInstance;
 
 const KNOWN_PROJECTS_KEY = 'better-gcp:gce-known-projects';
 const ACTIVE_PROJECTS_KEY = 'better-gcp:gce-active-projects';
@@ -32,6 +34,7 @@ function formatTime(iso?: string): string {
 function statusEmoji(status: string): string {
   switch (status) {
     case 'RUNNING':
+    case 'READY':
       return '\u2705';
     case 'STOPPED':
     case 'TERMINATED':
@@ -41,6 +44,7 @@ function statusEmoji(status: string): string {
       return '\u23F8';
     case 'PROVISIONING':
     case 'STAGING':
+    case 'CREATING':
       return '\u23F3';
     case 'SUSPENDED':
       return '\u23F8';
@@ -49,12 +53,63 @@ function statusEmoji(status: string): string {
   }
 }
 
-function consoleUrl(inst: GceInstance): string {
+function isTpuInstance(inst: ComputeInstance): inst is TpuInstance {
+  return inst.isTpu === true;
+}
+
+function getInstanceStatus(inst: ComputeInstance): string {
+  if (isTpuInstance(inst)) {
+    return inst.state;
+  }
+  return inst.status;
+}
+
+function getInstanceMachineType(inst: ComputeInstance): string {
+  if (isTpuInstance(inst)) {
+    return inst.acceleratorType;
+  }
+  return inst.machineType;
+}
+
+function getInstanceInternalIP(inst: ComputeInstance): string {
+  if (isTpuInstance(inst)) {
+    return inst.networkEndpoints[0]?.ipAddress ?? '-';
+  }
+  return inst.internalIP || '-';
+}
+
+function getInstanceExternalIP(inst: ComputeInstance): string {
+  if (isTpuInstance(inst)) {
+    return '-';
+  }
+  return inst.externalIP || '-';
+}
+
+function getSshCommand(inst: ComputeInstance): string {
+  const zone = inst.zone;
+  const name = inst.name;
+  const project = inst.projectId;
+
+  if (isTpuInstance(inst)) {
+    return `gcloud compute tpus tpu-vm ssh ${name} --zone=${zone} --project=${project}`;
+  }
+  return `gcloud compute ssh ${name} --zone=${zone} --project=${project}`;
+}
+
+function consoleUrl(inst: ComputeInstance): string {
+  if (isTpuInstance(inst)) {
+    return `https://console.cloud.google.com/compute/tpus/detail/${inst.zone}/${inst.name}?project=${inst.projectId}`;
+  }
   return `https://console.cloud.google.com/compute/instancesDetail/zones/${inst.zone}/instances/${inst.name}?project=${inst.projectId}`;
 }
 
-function logsUrl(inst: GceInstance): string {
-  const query = `resource.type%3D%22gce_instance%22%0Aresource.labels.instance_id%3D%22${inst.id}%22`;
+function logsUrl(inst: ComputeInstance): string {
+  if (isTpuInstance(inst)) {
+    const query = `resource.type%3D%22tpu.googleapis.com%2FNode%22%0Aresource.labels.node_id%3D%22${inst.name}%22`;
+    return `https://console.cloud.google.com/logs/query;query=${query}?project=${inst.projectId}`;
+  }
+  const id = (inst as GceInstance).id;
+  const query = `resource.type%3D%22gce_instance%22%0Aresource.labels.instance_id%3D%22${id}%22`;
   return `https://console.cloud.google.com/logs/query;query=${query}?project=${inst.projectId}`;
 }
 
@@ -94,7 +149,7 @@ const GceTab = ({ isActive }: GceTabProps) => {
   const [showZoneDropdown, setShowZoneDropdown] = useState(false);
   const [zoneSearch, setZoneSearch] = useState('');
   const zoneDropdownRef = React.useRef<HTMLDivElement>(null);
-  const [instances, setInstances] = useState<GceInstance[]>([]);
+  const [instances, setInstances] = useState<ComputeInstance[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [expandedInstance, setExpandedInstance] = useState<string | null>(null);
@@ -105,6 +160,8 @@ const GceTab = ({ isActive }: GceTabProps) => {
   const jumpInputRef = React.useRef<HTMLInputElement>(null);
   const [sortColumn, setSortColumn] = useState<'name' | 'project' | 'zone' | 'status' | 'machineType' | 'created'>('created');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [showSshModal, setShowSshModal] = useState(false);
+  const [sshCommand, setSshCommand] = useState('');
 
   const projects = useMemo(
     () => knownProjects.filter((p) => activeProjects.has(p)),
@@ -243,9 +300,9 @@ const GceTab = ({ isActive }: GceTabProps) => {
           i.name.toLowerCase().includes(lower) ||
           i.projectId.toLowerCase().includes(lower) ||
           i.zone.toLowerCase().includes(lower) ||
-          i.machineType.toLowerCase().includes(lower) ||
-          i.internalIP.toLowerCase().includes(lower) ||
-          i.externalIP.toLowerCase().includes(lower)
+          getInstanceMachineType(i).toLowerCase().includes(lower) ||
+          getInstanceInternalIP(i).toLowerCase().includes(lower) ||
+          getInstanceExternalIP(i).toLowerCase().includes(lower)
       );
     }
 
@@ -268,12 +325,12 @@ const GceTab = ({ isActive }: GceTabProps) => {
           bVal = b.zone.toLowerCase();
           break;
         case 'status':
-          aVal = a.status;
-          bVal = b.status;
+          aVal = getInstanceStatus(a);
+          bVal = getInstanceStatus(b);
           break;
         case 'machineType':
-          aVal = a.machineType.toLowerCase();
-          bVal = b.machineType.toLowerCase();
+          aVal = getInstanceMachineType(a).toLowerCase();
+          bVal = getInstanceMachineType(b).toLowerCase();
           break;
         case 'created':
           aVal = a.creationTimestamp ? new Date(a.creationTimestamp).getTime() : 0;
@@ -540,6 +597,7 @@ const GceTab = ({ isActive }: GceTabProps) => {
                 <tbody>
                   {filteredInstances.map((inst) => {
                     const key = `${inst.projectId}/${inst.zone}/${inst.name}`;
+                    const status = getInstanceStatus(inst);
                     return (
                       <tr
                         key={key}
@@ -550,19 +608,31 @@ const GceTab = ({ isActive }: GceTabProps) => {
                           onClick={() => setExpandedInstance(expandedInstance === key ? null : key)}
                         >
                           {inst.name}
+                          {isTpuInstance(inst) && (
+                            <span className="gce-tpu-tag">TPU</span>
+                          )}
                         </td>
                         <td className="vai-td-region">{inst.projectId}</td>
                         <td className="vai-td-region">{inst.zone}</td>
                         <td>
-                          <span className={`cr-status cr-status-${inst.status.toLowerCase()}`}>
-                            {statusEmoji(inst.status)} {inst.status}
+                          <span className={`cr-status cr-status-${status.toLowerCase()}`}>
+                            {statusEmoji(status)} {status}
                           </span>
                         </td>
-                        <td className="vai-td-mono">{inst.machineType}</td>
-                        <td className="vai-td-mono">{inst.internalIP || '-'}</td>
-                        <td className="vai-td-mono">{inst.externalIP || '-'}</td>
+                        <td className="vai-td-mono">{getInstanceMachineType(inst)}</td>
+                        <td className="vai-td-mono">{getInstanceInternalIP(inst)}</td>
+                        <td className="vai-td-mono">{getInstanceExternalIP(inst)}</td>
                         <td className="vai-td-time">{formatTime(inst.creationTimestamp)}</td>
                         <td className="vai-td-links">
+                          <button
+                            className="vai-link-btn"
+                            onClick={() => {
+                              setSshCommand(getSshCommand(inst));
+                              setShowSshModal(true);
+                            }}
+                          >
+                            SSH
+                          </button>
                           <button
                             className="vai-link-btn"
                             onClick={() => window.shell.openExternal(consoleUrl(inst))}
@@ -589,7 +659,12 @@ const GceTab = ({ isActive }: GceTabProps) => {
         {detail && (
           <div className="vai-detail">
             <div className="vai-detail-header">
-              <h3>{detail.name}</h3>
+              <h3>
+                {detail.name}
+                {isTpuInstance(detail) && (
+                  <span className="gce-tpu-tag" style={{ marginLeft: 10 }}>TPU</span>
+                )}
+              </h3>
               <button className="vai-detail-close" onClick={() => setExpandedInstance(null)}>
                 &times;
               </button>
@@ -599,19 +674,29 @@ const GceTab = ({ isActive }: GceTabProps) => {
               <h4>Overview</h4>
               <div className="vai-detail-grid">
                 <span className="vai-detail-label">Status</span>
-                <span>{statusEmoji(detail.status)} {detail.status}</span>
+                <span>{statusEmoji(getInstanceStatus(detail))} {getInstanceStatus(detail)}</span>
                 <span className="vai-detail-label">Project</span>
                 <span>{detail.projectId}</span>
                 <span className="vai-detail-label">Zone</span>
                 <span>{detail.zone}</span>
-                <span className="vai-detail-label">Machine Type</span>
-                <span className="vai-detail-mono">{detail.machineType}</span>
-                <span className="vai-detail-label">CPU Platform</span>
-                <span>{detail.cpuPlatform || '-'}</span>
+                <span className="vai-detail-label">{isTpuInstance(detail) ? 'Accelerator Type' : 'Machine Type'}</span>
+                <span className="vai-detail-mono">{getInstanceMachineType(detail)}</span>
+                {!isTpuInstance(detail) && (
+                  <>
+                    <span className="vai-detail-label">CPU Platform</span>
+                    <span>{detail.cpuPlatform || '-'}</span>
+                    <span className="vai-detail-label">Instance ID</span>
+                    <span className="vai-detail-mono">{detail.id}</span>
+                  </>
+                )}
+                {isTpuInstance(detail) && (
+                  <>
+                    <span className="vai-detail-label">Runtime Version</span>
+                    <span>{detail.runtimeVersion}</span>
+                  </>
+                )}
                 <span className="vai-detail-label">Created</span>
                 <span>{formatTime(detail.creationTimestamp)}</span>
-                <span className="vai-detail-label">Instance ID</span>
-                <span className="vai-detail-mono">{detail.id}</span>
               </div>
             </div>
 
@@ -626,15 +711,25 @@ const GceTab = ({ isActive }: GceTabProps) => {
               <h4>Network</h4>
               <div className="vai-detail-grid">
                 <span className="vai-detail-label">Internal IP</span>
-                <span className="vai-detail-mono">{detail.internalIP || '-'}</span>
-                <span className="vai-detail-label">External IP</span>
-                <span className="vai-detail-mono">{detail.externalIP || '-'}</span>
-                <span className="vai-detail-label">IP Forwarding</span>
-                <span>{detail.canIpForward ? 'Enabled' : 'Disabled'}</span>
+                <span className="vai-detail-mono">{getInstanceInternalIP(detail)}</span>
+                {!isTpuInstance(detail) && (
+                  <>
+                    <span className="vai-detail-label">External IP</span>
+                    <span className="vai-detail-mono">{getInstanceExternalIP(detail)}</span>
+                    <span className="vai-detail-label">IP Forwarding</span>
+                    <span>{detail.canIpForward ? 'Enabled' : 'Disabled'}</span>
+                  </>
+                )}
+                {isTpuInstance(detail) && detail.cidrBlock && (
+                  <>
+                    <span className="vai-detail-label">CIDR Block</span>
+                    <span className="vai-detail-mono">{detail.cidrBlock}</span>
+                  </>
+                )}
               </div>
             </div>
 
-            {detail.networkInterfaces.length > 0 && (
+            {!isTpuInstance(detail) && detail.networkInterfaces.length > 0 && (
               <div className="vai-detail-section">
                 <details>
                   <summary style={{ cursor: 'pointer', color: 'var(--accent)', fontSize: 12 }}>
@@ -666,11 +761,11 @@ const GceTab = ({ isActive }: GceTabProps) => {
               </div>
             </div>
 
-            {detail.tags.length > 0 && (
+            {!isTpuInstance(detail) && (detail as GceInstance).tags.length > 0 && (
               <div className="vai-detail-section">
                 <h4>Network Tags</h4>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {detail.tags.map((tag, i) => (
+                  {(detail as GceInstance).tags.map((tag: string, i: number) => (
                     <span key={i} className="vai-detail-mono" style={{ fontSize: 11, padding: '2px 6px', background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: 3 }}>
                       {tag}
                     </span>
@@ -679,11 +774,11 @@ const GceTab = ({ isActive }: GceTabProps) => {
               </div>
             )}
 
-            {detail.disks.length > 0 && (
+            {!isTpuInstance(detail) && (detail as GceInstance).disks.length > 0 && (
               <div className="vai-detail-section">
                 <h4>Disks</h4>
-                {detail.disks.map((disk, i) => (
-                  <div key={i} className="vai-detail-grid" style={{ marginBottom: i < detail.disks.length - 1 ? 8 : 0 }}>
+                {(detail as GceInstance).disks.map((disk: any, i: number) => (
+                  <div key={i} className="vai-detail-grid" style={{ marginBottom: i < (detail as GceInstance).disks.length - 1 ? 8 : 0 }}>
                     <span className="vai-detail-label">Device Name</span>
                     <span className="vai-detail-mono">{disk.deviceName}</span>
                     <span className="vai-detail-label">Source</span>
@@ -697,17 +792,19 @@ const GceTab = ({ isActive }: GceTabProps) => {
               </div>
             )}
 
-            <div className="vai-detail-section">
-              <h4>Scheduling</h4>
-              <div className="vai-detail-grid">
-                <span className="vai-detail-label">Automatic Restart</span>
-                <span>{detail.scheduling.automaticRestart ? 'Enabled' : 'Disabled'}</span>
-                <span className="vai-detail-label">On Host Maintenance</span>
-                <span>{detail.scheduling.onHostMaintenance || '-'}</span>
-                <span className="vai-detail-label">Preemptible</span>
-                <span>{detail.scheduling.preemptible ? 'Yes' : 'No'}</span>
+            {!isTpuInstance(detail) && (
+              <div className="vai-detail-section">
+                <h4>Scheduling</h4>
+                <div className="vai-detail-grid">
+                  <span className="vai-detail-label">Automatic Restart</span>
+                  <span>{(detail as GceInstance).scheduling.automaticRestart ? 'Enabled' : 'Disabled'}</span>
+                  <span className="vai-detail-label">On Host Maintenance</span>
+                  <span>{(detail as GceInstance).scheduling.onHostMaintenance || '-'}</span>
+                  <span className="vai-detail-label">Preemptible</span>
+                  <span>{(detail as GceInstance).scheduling.preemptible ? 'Yes' : 'No'}</span>
+                </div>
               </div>
-            </div>
+            )}
 
             {Object.keys(detail.labels).length > 0 && (
               <div className="vai-detail-section">
@@ -723,14 +820,14 @@ const GceTab = ({ isActive }: GceTabProps) => {
               </div>
             )}
 
-            {detail.metadata.length > 0 && (
+            {!isTpuInstance(detail) && (detail as GceInstance).metadata.length > 0 && (
               <div className="vai-detail-section">
                 <details>
                   <summary style={{ cursor: 'pointer', color: 'var(--accent)', fontSize: 12 }}>
-                    Metadata ({detail.metadata.length})
+                    Metadata ({(detail as GceInstance).metadata.length})
                   </summary>
                   <div className="vai-detail-grid" style={{ marginTop: 8 }}>
-                    {detail.metadata.map((m, i) => (
+                    {(detail as GceInstance).metadata.map((m: any, i: number) => (
                       <React.Fragment key={i}>
                         <span className="vai-detail-label">{m.key}</span>
                         <span className="vai-detail-mono" style={{ wordBreak: 'break-all' }}>{m.value}</span>
@@ -741,14 +838,14 @@ const GceTab = ({ isActive }: GceTabProps) => {
               </div>
             )}
 
-            {detail.scopes.length > 0 && (
+            {!isTpuInstance(detail) && (detail as GceInstance).scopes.length > 0 && (
               <div className="vai-detail-section">
                 <details>
                   <summary style={{ cursor: 'pointer', color: 'var(--accent)', fontSize: 12 }}>
-                    Access Scopes ({detail.scopes.length})
+                    Access Scopes ({(detail as GceInstance).scopes.length})
                   </summary>
                   <div style={{ marginTop: 8 }}>
-                    {detail.scopes.map((scope, i) => (
+                    {(detail as GceInstance).scopes.map((scope: string, i: number) => (
                       <div key={i} className="vai-detail-mono" style={{ fontSize: 11, marginBottom: 4 }}>
                         {scope}
                       </div>
@@ -778,6 +875,56 @@ const GceTab = ({ isActive }: GceTabProps) => {
           </div>
         )}
       </div>
+
+      {/* SSH Command Modal */}
+      {showSshModal && (
+        <div className="modal-backdrop" onClick={() => setShowSshModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 600 }}>
+            <div className="modal-header">
+              <span className="modal-title">SSH Command</span>
+              <button className="vai-detail-close" onClick={() => setShowSshModal(false)}>
+                &times;
+              </button>
+            </div>
+            <div style={{ padding: '16px 20px' }}>
+              <p style={{ marginBottom: 12, fontSize: 13, color: 'var(--muted)' }}>
+                Copy and run this command in your terminal:
+              </p>
+              <div
+                style={{
+                  background: 'var(--panel)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  padding: '12px 14px',
+                  fontFamily: 'IBM Plex Mono, monospace',
+                  fontSize: 13,
+                  wordBreak: 'break-all',
+                  userSelect: 'all',
+                  cursor: 'text',
+                }}
+              >
+                {sshCommand}
+              </div>
+              <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button
+                  className="secondary-button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(sshCommand);
+                  }}
+                >
+                  Copy to Clipboard
+                </button>
+                <button
+                  className="primary-button"
+                  onClick={() => setShowSshModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Jump modal */}
       {showJump && (

@@ -1,6 +1,7 @@
 import { GoogleAuth } from 'google-auth-library';
 import type {
   GceInstance,
+  TpuInstance,
   ListGceInstancesRequest,
   ListGceInstancesResponse,
 } from './types';
@@ -76,29 +77,73 @@ function convertInstance(raw: any, zone: string, projectId: string): GceInstance
   };
 }
 
+function convertTpuInstance(raw: any, zone: string, projectId: string): TpuInstance {
+  const labels: Record<string, string> = raw.labels ?? {};
+  const networkEndpoints = (raw.networkEndpoints ?? []).map((ne: any) => ({
+    ipAddress: ne.ipAddress ?? '',
+    port: ne.port ?? 0,
+  }));
+
+  return {
+    name: raw.name ?? '',
+    zone,
+    projectId,
+    state: raw.state ?? 'UNKNOWN',
+    acceleratorType: raw.acceleratorType?.split('/').pop() ?? '',
+    runtimeVersion: raw.runtimeVersion?.split('/').pop() ?? '',
+    creationTimestamp: raw.createTime ?? '',
+    description: raw.description ?? '',
+    networkEndpoints,
+    serviceAccount: raw.serviceAccount ?? '',
+    labels,
+    cidrBlock: raw.cidrBlock ?? '',
+    isTpu: true,
+  };
+}
+
 export async function listGceInstances(
   req: ListGceInstancesRequest
 ): Promise<ListGceInstancesResponse> {
   const { projectId, zone } = req;
   const client = await auth.getClient();
-  const url = `https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/${zone}/instances`;
 
-  try {
-    const res = await client.request({ url, method: 'GET' });
-    const data = res.data as any;
+  // Fetch both GCE instances and TPUs in parallel
+  const [gceRes, tpuRes] = await Promise.allSettled([
+    client.request({
+      url: `https://compute.googleapis.com/compute/v1/projects/${projectId}/zones/${zone}/instances`,
+      method: 'GET'
+    }),
+    client.request({
+      url: `https://tpu.googleapis.com/v2/projects/${projectId}/locations/${zone}/nodes`,
+      method: 'GET'
+    })
+  ]);
 
-    const instances = (data.items ?? []).map((inst: any) => convertInstance(inst, zone, projectId));
-    instances.sort((a: GceInstance, b: GceInstance) => {
-      const ta = a.creationTimestamp ? new Date(a.creationTimestamp).getTime() : 0;
-      const tb = b.creationTimestamp ? new Date(b.creationTimestamp).getTime() : 0;
-      return tb - ta;
-    });
+  const gceInstances: GceInstance[] = [];
+  const tpuInstances: TpuInstance[] = [];
 
-    return { instances };
-  } catch (err: any) {
-    if (err.response?.status === 404) {
-      return { instances: [] };
-    }
-    throw err;
+  // Process GCE instances
+  if (gceRes.status === 'fulfilled') {
+    const data = gceRes.value.data as any;
+    gceInstances.push(
+      ...(data.items ?? []).map((inst: any) => convertInstance(inst, zone, projectId))
+    );
   }
+
+  // Process TPU instances
+  if (tpuRes.status === 'fulfilled') {
+    const data = tpuRes.value.data as any;
+    tpuInstances.push(
+      ...(data.nodes ?? []).map((node: any) => convertTpuInstance(node, zone, projectId))
+    );
+  }
+
+  const allInstances = [...gceInstances, ...tpuInstances];
+  allInstances.sort((a, b) => {
+    const ta = a.creationTimestamp ? new Date(a.creationTimestamp).getTime() : 0;
+    const tb = b.creationTimestamp ? new Date(b.creationTimestamp).getTime() : 0;
+    return tb - ta;
+  });
+
+  return { instances: allInstances };
 }
