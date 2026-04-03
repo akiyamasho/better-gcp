@@ -2,10 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.5.0] - 2026-04-03
+
+### Added
+- **Accelerator column** in Compute Engine tab — new column displays color-coded tags:
+  - Green `CPU` for standard VM instances
+  - Blue `GPU` for GPU-accelerated instances (shows GPU type and count in detail view)
+  - Yellow `TPU` for Cloud TPU instances
+- **GPU detection** — automatically detects attached GPUs via guestAccelerators field
+
+### Fixed
+- **TPU instance names** — now correctly extracts instance name from full resource path (`projects/.../locations/.../nodes/{name}`)
+- **TPU tag placement** — moved from inline with name to dedicated Accelerator column for cleaner UI
+
 ## [4.4.0] - 2026-04-03
 
 ### Added
-- **TPU instance support** in Compute Engine tab — Cloud TPU nodes now appear in the same instance list with a yellow `TPU` tag. Supports filtering, sorting, and viewing TPU-specific details (accelerator type, runtime version, CIDR block, network endpoints).
+- **TPU instance support** in Compute Engine tab — Cloud TPU nodes now appear in the same instance list. Supports filtering, sorting, and viewing TPU-specific details (accelerator type, runtime version, CIDR block, network endpoints).
 - **SSH command popup** — click the SSH button on any GCE or TPU instance to view and copy the appropriate `gcloud compute ssh` or `gcloud compute tpus tpu-vm ssh` command. Includes one-click copy to clipboard.
 
 ## [4.3.0] - 2026-04-03

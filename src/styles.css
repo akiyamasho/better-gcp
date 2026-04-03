@@ -2210,19 +2210,41 @@ body {
 :root[data-theme='dark'] .cr-status-not-ready { color: #f87171; }
 :root[data-theme='dark'] .cr-status-unknown { color: #9ca3af; }
 
-.gce-tpu-tag {
+.gce-accelerator-tag {
   display: inline-block;
-  margin-left: 8px;
-  padding: 2px 6px;
-  background: #fbbf24;
-  color: #78350f;
-  border-radius: 3px;
-  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.03em;
 }
 
-:root[data-theme='dark'] .gce-tpu-tag {
+.gce-accelerator-cpu {
+  background: #22c55e;
+  color: #052e16;
+}
+
+.gce-accelerator-gpu {
+  background: #3b82f6;
+  color: #eff6ff;
+}
+
+.gce-accelerator-tpu {
+  background: #fbbf24;
+  color: #78350f;
+}
+
+:root[data-theme='dark'] .gce-accelerator-cpu {
+  background: #166534;
+  color: #dcfce7;
+}
+
+:root[data-theme='dark'] .gce-accelerator-gpu {
+  background: #1e40af;
+  color: #dbeafe;
+}
+
+:root[data-theme='dark'] .gce-accelerator-tpu {
   background: #92400e;
   color: #fef3c7;
 }

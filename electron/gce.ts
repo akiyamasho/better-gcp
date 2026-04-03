@@ -48,6 +48,10 @@ function convertInstance(raw: any, zone: string, projectId: string): GceInstance
 
   const tags: string[] = raw.tags?.items ?? [];
 
+  // Check for GPU accelerators
+  const guestAccelerators = raw.guestAccelerators ?? [];
+  const hasGpu = guestAccelerators.length > 0;
+
   return {
     name: raw.name ?? '',
     id: raw.id ?? '',
@@ -74,6 +78,9 @@ function convertInstance(raw: any, zone: string, projectId: string): GceInstance
       onHostMaintenance: raw.scheduling?.onHostMaintenance ?? '',
       preemptible: raw.scheduling?.preemptible ?? false,
     },
+    hasGpu,
+    gpuType: hasGpu ? guestAccelerators[0]?.acceleratorType?.split('/').pop() : undefined,
+    gpuCount: hasGpu ? guestAccelerators[0]?.acceleratorCount : undefined,
   };
 }
 
@@ -84,8 +91,13 @@ function convertTpuInstance(raw: any, zone: string, projectId: string): TpuInsta
     port: ne.port ?? 0,
   }));
 
+  // Extract just the name from the full resource path
+  // Format: projects/{project}/locations/{location}/nodes/{name}
+  const nameParts = (raw.name ?? '').split('/');
+  const instanceName = nameParts.length > 0 ? nameParts[nameParts.length - 1] : raw.name ?? '';
+
   return {
-    name: raw.name ?? '',
+    name: instanceName,
     zone,
     projectId,
     state: raw.state ?? 'UNKNOWN',

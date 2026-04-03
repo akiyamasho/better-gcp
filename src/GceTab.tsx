@@ -96,6 +96,16 @@ function getSshCommand(inst: ComputeInstance): string {
   return `gcloud compute ssh ${name} --zone=${zone} --project=${project}`;
 }
 
+function getAcceleratorType(inst: ComputeInstance): 'CPU' | 'GPU' | 'TPU' {
+  if (isTpuInstance(inst)) {
+    return 'TPU';
+  }
+  if (inst.hasGpu) {
+    return 'GPU';
+  }
+  return 'CPU';
+}
+
 function consoleUrl(inst: ComputeInstance): string {
   if (isTpuInstance(inst)) {
     return `https://console.cloud.google.com/compute/tpus/detail/${inst.zone}/${inst.name}?project=${inst.projectId}`;
@@ -586,6 +596,7 @@ const GceTab = ({ isActive }: GceTabProps) => {
                     <th className="sortable" onClick={() => handleSort('machineType')}>
                       Machine Type {sortColumn === 'machineType' && (sortDirection === 'asc' ? '↑' : '↓')}
                     </th>
+                    <th>Accelerator</th>
                     <th>Internal IP</th>
                     <th>External IP</th>
                     <th className="sortable" onClick={() => handleSort('created')}>
@@ -608,9 +619,6 @@ const GceTab = ({ isActive }: GceTabProps) => {
                           onClick={() => setExpandedInstance(expandedInstance === key ? null : key)}
                         >
                           {inst.name}
-                          {isTpuInstance(inst) && (
-                            <span className="gce-tpu-tag">TPU</span>
-                          )}
                         </td>
                         <td className="vai-td-region">{inst.projectId}</td>
                         <td className="vai-td-region">{inst.zone}</td>
@@ -620,6 +628,11 @@ const GceTab = ({ isActive }: GceTabProps) => {
                           </span>
                         </td>
                         <td className="vai-td-mono">{getInstanceMachineType(inst)}</td>
+                        <td>
+                          <span className={`gce-accelerator-tag gce-accelerator-${getAcceleratorType(inst).toLowerCase()}`}>
+                            {getAcceleratorType(inst)}
+                          </span>
+                        </td>
                         <td className="vai-td-mono">{getInstanceInternalIP(inst)}</td>
                         <td className="vai-td-mono">{getInstanceExternalIP(inst)}</td>
                         <td className="vai-td-time">{formatTime(inst.creationTimestamp)}</td>
@@ -659,12 +672,7 @@ const GceTab = ({ isActive }: GceTabProps) => {
         {detail && (
           <div className="vai-detail">
             <div className="vai-detail-header">
-              <h3>
-                {detail.name}
-                {isTpuInstance(detail) && (
-                  <span className="gce-tpu-tag" style={{ marginLeft: 10 }}>TPU</span>
-                )}
-              </h3>
+              <h3>{detail.name}</h3>
               <button className="vai-detail-close" onClick={() => setExpandedInstance(null)}>
                 &times;
               </button>
@@ -679,6 +687,22 @@ const GceTab = ({ isActive }: GceTabProps) => {
                 <span>{detail.projectId}</span>
                 <span className="vai-detail-label">Zone</span>
                 <span>{detail.zone}</span>
+                <span className="vai-detail-label">Accelerator</span>
+                <span>
+                  <span className={`gce-accelerator-tag gce-accelerator-${getAcceleratorType(detail).toLowerCase()}`}>
+                    {getAcceleratorType(detail)}
+                  </span>
+                  {!isTpuInstance(detail) && detail.hasGpu && detail.gpuType && (
+                    <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--muted)' }}>
+                      {detail.gpuCount}x {detail.gpuType}
+                    </span>
+                  )}
+                  {isTpuInstance(detail) && (
+                    <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--muted)' }}>
+                      {detail.acceleratorType}
+                    </span>
+                  )}
+                </span>
                 <span className="vai-detail-label">{isTpuInstance(detail) ? 'Accelerator Type' : 'Machine Type'}</span>
                 <span className="vai-detail-mono">{getInstanceMachineType(detail)}</span>
                 {!isTpuInstance(detail) && (

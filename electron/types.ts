@@ -294,6 +294,9 @@ export type GceInstance = {
     onHostMaintenance: string;
     preemptible: boolean;
   };
+  hasGpu: boolean;
+  gpuType?: string;
+  gpuCount?: number;
   isTpu?: false;
 };
 
