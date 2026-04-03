@@ -103,11 +103,22 @@ const GceTab = ({ isActive }: GceTabProps) => {
   const [jumpQuery, setJumpQuery] = useState('');
   const [jumpIndex, setJumpIndex] = useState(0);
   const jumpInputRef = React.useRef<HTMLInputElement>(null);
+  const [sortColumn, setSortColumn] = useState<'name' | 'project' | 'zone' | 'status' | 'machineType' | 'created'>('created');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const projects = useMemo(
     () => knownProjects.filter((p) => activeProjects.has(p)),
     [knownProjects, activeProjects]
   );
+
+  const handleSort = useCallback((column: typeof sortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  }, [sortColumn]);
 
   useEffect(() => {
     if (knownProjects.length > 0) return;
@@ -224,18 +235,61 @@ const GceTab = ({ isActive }: GceTabProps) => {
   }, [projects, zones, fetchInstances]);
 
   const filteredInstances = useMemo(() => {
-    if (!searchQuery) return instances;
-    const lower = searchQuery.toLowerCase();
-    return instances.filter(
-      (i) =>
-        i.name.toLowerCase().includes(lower) ||
-        i.projectId.toLowerCase().includes(lower) ||
-        i.zone.toLowerCase().includes(lower) ||
-        i.machineType.toLowerCase().includes(lower) ||
-        i.internalIP.toLowerCase().includes(lower) ||
-        i.externalIP.toLowerCase().includes(lower)
-    );
-  }, [instances, searchQuery]);
+    let filtered = instances;
+    if (searchQuery) {
+      const lower = searchQuery.toLowerCase();
+      filtered = instances.filter(
+        (i) =>
+          i.name.toLowerCase().includes(lower) ||
+          i.projectId.toLowerCase().includes(lower) ||
+          i.zone.toLowerCase().includes(lower) ||
+          i.machineType.toLowerCase().includes(lower) ||
+          i.internalIP.toLowerCase().includes(lower) ||
+          i.externalIP.toLowerCase().includes(lower)
+      );
+    }
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      let aVal: any;
+      let bVal: any;
+
+      switch (sortColumn) {
+        case 'name':
+          aVal = a.name.toLowerCase();
+          bVal = b.name.toLowerCase();
+          break;
+        case 'project':
+          aVal = a.projectId.toLowerCase();
+          bVal = b.projectId.toLowerCase();
+          break;
+        case 'zone':
+          aVal = a.zone.toLowerCase();
+          bVal = b.zone.toLowerCase();
+          break;
+        case 'status':
+          aVal = a.status;
+          bVal = b.status;
+          break;
+        case 'machineType':
+          aVal = a.machineType.toLowerCase();
+          bVal = b.machineType.toLowerCase();
+          break;
+        case 'created':
+          aVal = a.creationTimestamp ? new Date(a.creationTimestamp).getTime() : 0;
+          bVal = b.creationTimestamp ? new Date(b.creationTimestamp).getTime() : 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [instances, searchQuery, sortColumn, sortDirection]);
 
   const jumpItems = useMemo(() => {
     return instances.map((i) => ({
@@ -460,14 +514,26 @@ const GceTab = ({ isActive }: GceTabProps) => {
               <table className="vai-table">
                 <thead>
                   <tr>
-                    <th>Instance</th>
-                    <th>Project</th>
-                    <th>Zone</th>
-                    <th>Status</th>
-                    <th>Machine Type</th>
+                    <th className="sortable" onClick={() => handleSort('name')}>
+                      Instance {sortColumn === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="sortable" onClick={() => handleSort('project')}>
+                      Project {sortColumn === 'project' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="sortable" onClick={() => handleSort('zone')}>
+                      Zone {sortColumn === 'zone' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="sortable" onClick={() => handleSort('status')}>
+                      Status {sortColumn === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="sortable" onClick={() => handleSort('machineType')}>
+                      Machine Type {sortColumn === 'machineType' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
                     <th>Internal IP</th>
                     <th>External IP</th>
-                    <th>Created</th>
+                    <th className="sortable" onClick={() => handleSort('created')}>
+                      Created {sortColumn === 'created' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
                     <th>Links</th>
                   </tr>
                 </thead>

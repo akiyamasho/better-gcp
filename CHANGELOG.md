@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.3.0] - 2026-04-03
+
+### Added
+- **Sortable table columns** — click column headers in Compute Engine and Cloud Run tabs to sort by name, project, zone/region, status, machine type, or creation time. Click again to reverse sort direction. Arrow indicators show current sort column and direction.
+
 ## [4.2.0] - 2026-04-03
 
 ### Added

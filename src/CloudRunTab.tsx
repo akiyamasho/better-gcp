@@ -74,11 +74,22 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
   const [jumpQuery, setJumpQuery] = useState('');
   const [jumpIndex, setJumpIndex] = useState(0);
   const jumpInputRef = React.useRef<HTMLInputElement>(null);
+  const [sortColumn, setSortColumn] = useState<'name' | 'project' | 'region' | 'status' | 'created'>('created');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const projects = useMemo(
     () => knownProjects.filter((p) => activeProjects.has(p)),
     [knownProjects, activeProjects]
   );
+
+  const handleSort = useCallback((column: typeof sortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  }, [sortColumn]);
 
   useEffect(() => {
     if (knownProjects.length > 0) return;
@@ -187,16 +198,55 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
   }, []);
 
   const filteredServices = useMemo(() => {
-    if (!searchQuery) return services;
-    const lower = searchQuery.toLowerCase();
-    return services.filter(
-      (s) =>
-        s.name.toLowerCase().includes(lower) ||
-        s.namespace.toLowerCase().includes(lower) ||
-        s.region.toLowerCase().includes(lower) ||
-        s.containerImage.toLowerCase().includes(lower)
-    );
-  }, [services, searchQuery]);
+    let filtered = services;
+    if (searchQuery) {
+      const lower = searchQuery.toLowerCase();
+      filtered = services.filter(
+        (s) =>
+          s.name.toLowerCase().includes(lower) ||
+          s.namespace.toLowerCase().includes(lower) ||
+          s.region.toLowerCase().includes(lower) ||
+          s.containerImage.toLowerCase().includes(lower)
+      );
+    }
+
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      let aVal: any;
+      let bVal: any;
+
+      switch (sortColumn) {
+        case 'name':
+          aVal = a.name.toLowerCase();
+          bVal = b.name.toLowerCase();
+          break;
+        case 'project':
+          aVal = a.namespace.toLowerCase();
+          bVal = b.namespace.toLowerCase();
+          break;
+        case 'region':
+          aVal = a.region.toLowerCase();
+          bVal = b.region.toLowerCase();
+          break;
+        case 'status':
+          aVal = readyStatus(a);
+          bVal = readyStatus(b);
+          break;
+        case 'created':
+          aVal = a.createTime ? new Date(a.createTime).getTime() : 0;
+          bVal = b.createTime ? new Date(b.createTime).getTime() : 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [services, searchQuery, sortColumn, sortDirection]);
 
   const jumpItems = useMemo(() => {
     return services.map((s) => ({
@@ -371,12 +421,22 @@ const CloudRunTab = ({ isActive }: CloudRunTabProps) => {
               <table className="vai-table">
                 <thead>
                   <tr>
-                    <th>Service</th>
-                    <th>Project</th>
-                    <th>Region</th>
-                    <th>Status</th>
+                    <th className="sortable" onClick={() => handleSort('name')}>
+                      Service {sortColumn === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="sortable" onClick={() => handleSort('project')}>
+                      Project {sortColumn === 'project' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="sortable" onClick={() => handleSort('region')}>
+                      Region {sortColumn === 'region' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="sortable" onClick={() => handleSort('status')}>
+                      Status {sortColumn === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
                     <th>URL</th>
-                    <th>Created</th>
+                    <th className="sortable" onClick={() => handleSort('created')}>
+                      Created {sortColumn === 'created' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
                     <th>Links</th>
                   </tr>
                 </thead>

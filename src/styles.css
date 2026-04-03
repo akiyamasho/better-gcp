@@ -1426,6 +1426,17 @@ body {
   white-space: nowrap;
 }
 
+.vai-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.vai-table th.sortable:hover {
+  background: var(--bg);
+  color: var(--ink);
+}
+
 .vai-th-check {
   width: 40px;
 }
