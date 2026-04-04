@@ -9,8 +9,8 @@ The macOS app can also check GitHub releases on startup and install the newest `
 
 ## Download
 
-- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.6.0-arm64.dmg)**
-- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.6.0-arm64-mac.zip)**
+- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/download/v4.6.0/Better%20GCP-4.6.0-arm64.dmg)**
+- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/download/v4.6.0/Better%20GCP-4.6.0-arm64-mac.zip)**
 
 > **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
 > ```bash
