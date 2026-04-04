@@ -977,6 +977,38 @@ body {
 :root[data-theme='dark'] .vai-td-time {
   color: #b0bec9;
 }
+
+:root[data-theme='dark'] .context-menu {
+  background: var(--panel);
+  border-color: var(--border);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme='dark'] .context-item:hover {
+  background: #0d1522;
+}
+
+:root[data-theme='dark'] .modal {
+  background: var(--panel);
+  border-color: var(--border);
+}
+
+:root[data-theme='dark'] .bq-tab:hover {
+  background: rgba(96, 165, 250, 0.08);
+}
+
+:root[data-theme='dark'] .bucket-item:hover .bucket-main {
+  background: rgba(96, 165, 250, 0.08);
+}
+
+:root[data-theme='dark'] .list-row {
+  background: rgba(96, 165, 250, 0.06);
+}
+
+:root[data-theme='dark'] .list-row:hover {
+  background: rgba(96, 165, 250, 0.1);
+  border-color: var(--border);
+}
 /* BigQuery tab bar */
 
 .bq-tab-bar {

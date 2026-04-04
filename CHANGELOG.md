@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.5.1] - 2026-04-04
+
+### Fixed
+- **Dark mode contrast** — improved visibility of context menus, modals, buttons, and hover states in dark mode. All popup windows now use proper dark backgrounds instead of white.
+
 ## [4.5.0] - 2026-04-03
 
 ### Added
