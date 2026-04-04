@@ -27,6 +27,7 @@ import { listCustomJobs, cancelCustomJob, deleteCustomJob } from './vertexai';
 import { listPipelineJobs, getPipelineJob, cancelPipelineJob, deletePipelineJob } from './vertexai-pipelines';
 import { listCloudRunServices, getCloudRunService } from './cloudrun';
 import { listGceInstances } from './gce';
+import { checkForUpdates, installLatestUpdate } from './updates';
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
 
@@ -318,4 +319,20 @@ ipcMain.handle('gce:list-instances', async (_event, req) => {
 
 ipcMain.handle('shell:open-external', async (_event, url: string) => {
   await shell.openExternal(url);
+});
+
+ipcMain.handle('updates:check', async () => {
+  try {
+    return { ok: true, data: await checkForUpdates() };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('updates:install', async () => {
+  try {
+    return await installLatestUpdate();
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
 });

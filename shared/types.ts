@@ -103,6 +103,22 @@ export type BqSavedQuery = {
   createdAt: string;
 };
 
+export type AppUpdateAsset = {
+  name: string;
+  downloadUrl: string;
+};
+
+export type AppUpdateInfo = {
+  currentVersion: string;
+  latestVersion: string;
+  releaseName: string;
+  releaseUrl: string;
+  publishedAt: string;
+  notes?: string;
+  hasUpdate: boolean;
+  dmg?: AppUpdateAsset;
+};
+
 export type VertexAICustomJob = {
   name: string;
   displayName: string;

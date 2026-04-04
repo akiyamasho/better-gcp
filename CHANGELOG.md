@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.6.0] - 2026-04-04
+
+### Added
+- **In-app updater** — the packaged macOS app now checks GitHub Releases for a newer version and can install the latest `.dmg` directly from the header. The installer replaces the app bundle and removes quarantine with `xattr -dr com.apple.quarantine`.
+
+### Changed
+- **README download targets** — updated release asset links and version badge for the new `4.6.0` macOS release.
+
 ## [4.5.1] - 2026-04-04
 
 ### Fixed

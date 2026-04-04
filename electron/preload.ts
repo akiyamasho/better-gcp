@@ -7,6 +7,7 @@ import type {
   DownloadManyRequest,
   DownloadRequest,
   GetCloudRunServiceRequest,
+  AppUpdateInfo,
   ListCloudRunServicesRequest,
   ListCustomJobsRequest,
   ListGceInstancesRequest,
@@ -69,4 +70,10 @@ contextBridge.exposeInMainWorld('gce', {
 
 contextBridge.exposeInMainWorld('shell', {
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
+});
+
+contextBridge.exposeInMainWorld('updates', {
+  check: (): Promise<{ ok: true; data: AppUpdateInfo } | { ok: false; error: string }> =>
+    ipcRenderer.invoke('updates:check'),
+  install: () => ipcRenderer.invoke('updates:install'),
 });

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { AppUpdateInfo } from '@shared/types';
 import GcsTab from './GcsTab';
 import BigQueryTab from './BigQueryTab';
 import VertexAITab from './VertexAITab';
@@ -8,6 +9,7 @@ import GceTab from './GceTab';
 
 type ServiceTab = 'gcs' | 'bigquery' | 'vertex-ai' | 'pipelines' | 'cloud-run' | 'gce';
 type ThemePreference = 'system' | 'light' | 'dark';
+type UpdateStatus = 'idle' | 'checking' | 'available' | 'current' | 'error' | 'installing';
 
 const TAB_ORDER: ServiceTab[] = ['gcs', 'bigquery', 'vertex-ai', 'pipelines', 'cloud-run', 'gce'];
 
@@ -36,6 +38,9 @@ const App = () => {
   const [tabPaletteQuery, setTabPaletteQuery] = useState('');
   const [tabPaletteIndex, setTabPaletteIndex] = useState(0);
   const tabPaletteInputRef = useRef<HTMLInputElement>(null);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
+  const [updateInfo, setUpdateInfo] = useState<AppUpdateInfo | null>(null);
+  const [updateError, setUpdateError] = useState('');
 
   useEffect(() => {
     try {
@@ -74,6 +79,36 @@ const App = () => {
     document.documentElement.dataset.theme = resolvedTheme;
     document.documentElement.style.colorScheme = resolvedTheme;
   }, [resolvedTheme]);
+
+  const runUpdateCheck = useCallback(async (mode: 'auto' | 'manual' = 'manual') => {
+    setUpdateStatus('checking');
+    setUpdateError('');
+
+    const result = await window.updates.check();
+    if (!result.ok) {
+      setUpdateInfo(null);
+      setUpdateError(result.error);
+      setUpdateStatus(mode === 'auto' ? 'idle' : 'error');
+      return;
+    }
+
+    setUpdateInfo(result.data);
+    setUpdateStatus(result.data.hasUpdate ? 'available' : 'current');
+  }, []);
+
+  const handleInstallUpdate = useCallback(async () => {
+    setUpdateStatus('installing');
+    setUpdateError('');
+    const result = await window.updates.install();
+    if (!result.ok) {
+      setUpdateStatus(updateInfo?.hasUpdate ? 'available' : 'error');
+      setUpdateError(result.error ?? 'Failed to install update');
+    }
+  }, [updateInfo]);
+
+  useEffect(() => {
+    void runUpdateCheck('auto');
+  }, [runUpdateCheck]);
 
   const filteredTabs = useMemo(() => {
     if (!tabPaletteQuery) return TAB_ORDER;
@@ -114,6 +149,19 @@ const App = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  const updateSummary = useMemo(() => {
+    if (updateStatus === 'checking') return 'Checking for updates...';
+    if (updateStatus === 'installing') return 'Installing update...';
+    if (updateStatus === 'error') return updateError || 'Update check failed';
+    if (updateStatus === 'available' && updateInfo) {
+      return `Update available: v${updateInfo.latestVersion}`;
+    }
+    if (updateStatus === 'current' && updateInfo) {
+      return `Up to date: v${updateInfo.currentVersion}`;
+    }
+    return 'Auto-update';
+  }, [updateError, updateInfo, updateStatus]);
+
   return (
     <div className="app-root">
       <div className="service-tabs">
@@ -127,6 +175,28 @@ const App = () => {
           </button>
         ))}
         <div className="service-settings">
+          <div className={`app-update-panel ${updateStatus}`}>
+            <span className="app-update-summary">{updateSummary}</span>
+            {updateInfo?.releaseUrl && updateStatus !== 'installing' && (
+              <button
+                className="app-update-link"
+                type="button"
+                onClick={() => void window.shell.openExternal(updateInfo.releaseUrl)}
+              >
+                Release
+              </button>
+            )}
+            {updateStatus === 'available' && (
+              <button className="app-update-action primary" type="button" onClick={() => void handleInstallUpdate()}>
+                Install
+              </button>
+            )}
+            {updateStatus !== 'installing' && (
+              <button className="app-update-action" type="button" onClick={() => void runUpdateCheck('manual')}>
+                Check
+              </button>
+            )}
+          </div>
           <label className="service-settings-label" htmlFor="theme-preference">
             Theme
           </label>

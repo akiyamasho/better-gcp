@@ -1,4 +1,5 @@
 import type {
+  AppUpdateInfo,
   BqDataset,
   BqProject,
   BqQueryRequest,
@@ -72,6 +73,10 @@ declare global {
     };
     shell: {
       openExternal: (url: string) => Promise<void>;
+    };
+    updates: {
+      check: () => Promise<IpcResult<AppUpdateInfo>>;
+      install: () => Promise<{ ok: boolean; error?: string }>;
     };
   }
 }

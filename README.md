@@ -1,14 +1,16 @@
 # Better GCP
 
-![Version](https://img.shields.io/badge/version-v4.5.0-blue)
+![Version](https://img.shields.io/badge/version-v4.6.0-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
 
 Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI. All data stays on your machine. No telemetry, no cloud backend.
 
+The macOS app can also check GitHub releases on startup and install the newest `.dmg` in-app, including automatic quarantine removal.
+
 ## Download
 
-- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.5.0-arm64.dmg)**
-- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.5.0-arm64-mac.zip)**
+- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.6.0-arm64.dmg)**
+- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/latest/download/Better.GCP-4.6.0-arm64-mac.zip)**
 
 > **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
 > ```bash
@@ -141,6 +143,7 @@ make dmg
 
 ## Notes
 
+- **Auto-update**: the packaged macOS app checks GitHub Releases on startup. When a newer version is available, use the header `Install` action to download the latest `.dmg`, replace the installed app, and run `xattr -dr com.apple.quarantine` automatically.
 - **Tab palette** (`Cmd/Ctrl+Shift+P`): quickly switch between tabs by typing — works like VS Code's command palette.
 - Quick Open / Quick Jump (`Cmd/Ctrl+Shift+O`) only search already-loaded items. Expand projects and datasets in the sidebar to load them.
 - Drag a file from the GCS list to the desktop to download via a temp file.
