@@ -121,46 +121,45 @@ const SecretManagerTab = ({ isActive }: SecretManagerTabProps) => {
   );
 
   return (
-    <div className="service-panel active">
-      <div className="service-header">
-        <div className="service-header-left">
-          <h2 className="service-title">Secret Manager</h2>
-        </div>
-        <div className="service-settings">
-          <form onSubmit={handleProjectSubmit} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <label className="service-settings-label">Project</label>
+    <div className="vai-layout">
+      {/* Toolbar */}
+      <div className="vai-toolbar">
+        <div className="vai-toolbar-left">
+          <form onSubmit={handleProjectSubmit} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <label style={{ fontSize: 13, color: 'var(--muted)' }}>Project:</label>
             <input
-              className="service-settings-select"
+              className="cr-project-dropdown-input"
               value={projectInput}
               onChange={(e) => setProjectInput(e.target.value)}
               placeholder="project-id"
-              style={{ fontFamily: 'IBM Plex Mono, monospace', minWidth: 200 }}
+              style={{ fontFamily: 'IBM Plex Mono, monospace', width: 250 }}
             />
-            <button className="secondary-button" type="submit">
+            <button className="secondary-button" type="submit" style={{ padding: '6px 12px', fontSize: 13 }}>
               Go
             </button>
           </form>
+          <input
+            className="cr-search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Filter secrets..."
+            disabled={!projectId}
+          />
         </div>
+        <span className="vai-count">
+          {projectId ? `${filteredSecrets.length} ${filteredSecrets.length === 1 ? 'secret' : 'secrets'}` : ''}
+        </span>
       </div>
-      <div className="service-content">
+
+      {/* Main content */}
+      <div className="vai-content">
         {error ? <div className="cr-error">{error}</div> : null}
         {loading ? (
           <div className="cr-loading">Loading secrets...</div>
         ) : !projectId ? (
-          <div className="cr-empty">Enter a project ID above to view secrets.</div>
+          <div className="empty-state">Enter a project ID above to view secrets.</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-            <div className="vai-toolbar">
-              <input
-                className="cr-search-input"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Filter secrets..."
-              />
-              <span className="vai-count">
-                {filteredSecrets.length} {filteredSecrets.length === 1 ? 'secret' : 'secrets'}
-              </span>
-            </div>
+          <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
             <div style={{ flex: 1, overflow: 'auto', display: 'flex', gap: 0 }}>
               <div style={{ flex: selectedSecret ? '0 0 50%' : '1 1 100%', overflow: 'auto', borderRight: selectedSecret ? '1px solid var(--border)' : 'none' }}>
                 <table className="bq-table">

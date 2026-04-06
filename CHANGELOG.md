@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.8.1] - 2026-04-06
+
+### Changed
+- **Secret Manager UI consistency** — moved project selector to top toolbar to match Cloud Run and Compute Engine tab layouts. Now uses vai-layout structure consistently.
+
 ## [4.8.0] - 2026-04-06
 
 ### Added
