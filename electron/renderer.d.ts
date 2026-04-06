@@ -24,6 +24,7 @@ import type {
   ListPipelineJobsRequest,
   ListPipelineJobsResponse,
   PipelineJob,
+  RenamePrefixRequest,
   StartDragRequest,
   UploadRequest,
 } from '../shared/types';
@@ -42,6 +43,7 @@ declare global {
       upload: (req: UploadRequest) => Promise<{ ok: boolean; error?: string }>;
       delete: (req: DeleteRequest) => Promise<{ ok: boolean; error?: string }>;
       createFolder: (req: CreateFolderRequest) => Promise<{ ok: boolean; error?: string }>;
+      renamePrefix: (req: RenamePrefixRequest) => Promise<{ ok: boolean; error?: string }>;
       startDrag: (req: StartDragRequest) => Promise<{ ok: boolean; error?: string }>;
       chooseUpload: () => Promise<{ canceled: boolean; paths: string[] }>;
     };

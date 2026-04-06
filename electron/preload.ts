@@ -13,6 +13,7 @@ import type {
   ListGceInstancesRequest,
   ListPipelineJobsRequest,
   ListObjectsRequest,
+  RenamePrefixRequest,
   StartDragRequest,
   UploadRequest,
 } from './types';
@@ -25,6 +26,7 @@ contextBridge.exposeInMainWorld('gcs', {
   upload: (req: UploadRequest) => ipcRenderer.invoke('gcs:upload', req),
   delete: (req: DeleteRequest) => ipcRenderer.invoke('gcs:delete', req),
   createFolder: (req: CreateFolderRequest) => ipcRenderer.invoke('gcs:create-folder', req),
+  renamePrefix: (req: RenamePrefixRequest) => ipcRenderer.invoke('gcs:rename-prefix', req),
   startDrag: (req: StartDragRequest) => ipcRenderer.invoke('gcs:start-drag', req),
   chooseUpload: () => ipcRenderer.invoke('gcs:choose-upload'),
 });

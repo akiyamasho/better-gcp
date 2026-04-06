@@ -59,6 +59,12 @@ export type CreateFolderRequest = {
   name: string;
 };
 
+export type RenamePrefixRequest = {
+  bucket: string;
+  prefix: string;
+  newName: string;
+};
+
 export type BqProject = {
   id: string;
   name: string;

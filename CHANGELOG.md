@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.7.0] - 2026-04-06
+
+### Added
+- **Rename folders** — right-click any folder in Cloud Storage and select "Rename folder..." to rename it. The rename operation copies all objects to the new prefix and deletes the old ones.
+- **Bookmark directories** — save frequently-used GCS paths (bucket + prefix) with custom names. Bookmarks appear in the sidebar for quick navigation. Right-click any folder or use the background menu to bookmark the current path.
+- **Bookmarks sidebar section** — new collapsible section in the sidebar displays all saved bookmarks with their custom names and paths. Click to navigate, × to remove.
+
 ## [4.6.0] - 2026-04-04
 
 ### Added

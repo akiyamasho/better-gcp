@@ -10,6 +10,7 @@ import {
   downloadPrefix,
   downloadToTemp,
   createFolder,
+  renamePrefix,
   listBuckets,
   listObjects,
   uploadPaths,
@@ -152,6 +153,18 @@ ipcMain.handle('gcs:create-folder', async (_event, req) => {
     const { bucket, prefix, name } = req as { bucket: string; prefix: string; name: string };
     if (!bucket) return { ok: false, error: 'Missing bucket' };
     await createFolder(bucket, prefix ?? '', name ?? '');
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('gcs:rename-prefix', async (_event, req) => {
+  try {
+    const { bucket, prefix, newName } = req as { bucket: string; prefix: string; newName: string };
+    if (!bucket) return { ok: false, error: 'Missing bucket' };
+    if (!prefix) return { ok: false, error: 'Missing prefix' };
+    await renamePrefix(bucket, prefix, newName);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };

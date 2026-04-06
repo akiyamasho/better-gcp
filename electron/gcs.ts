@@ -156,3 +156,32 @@ export const createFolder = async (bucket: string, prefix: string, name: string)
   const folderPath = `${normalizedPrefix}${trimmed}/`;
   await bucketRef.file(folderPath).save('');
 };
+
+export const renamePrefix = async (bucket: string, oldPrefix: string, newName: string) => {
+  const bucketRef = storage.bucket(bucket);
+  const oldNormalized = normalizePrefix(oldPrefix);
+  const trimmed = newName.trim().replace(/^\/+|\/+$/g, '');
+  if (!trimmed) throw new Error('New folder name is required');
+
+  // Extract parent prefix
+  const parts = oldNormalized.split('/').filter(Boolean);
+  parts.pop(); // Remove the last folder name
+  const parentPrefix = parts.length > 0 ? parts.join('/') + '/' : '';
+  const newNormalized = `${parentPrefix}${trimmed}/`;
+
+  if (oldNormalized === newNormalized) return;
+
+  // Copy all files from old prefix to new prefix
+  const [files] = await bucketRef.getFiles({ prefix: oldNormalized });
+
+  for (const file of files) {
+    const relativePath = file.name.slice(oldNormalized.length);
+    const newPath = `${newNormalized}${relativePath}`;
+    await file.copy(bucketRef.file(newPath));
+  }
+
+  // Delete all files with old prefix
+  for (const file of files) {
+    await file.delete({ ignoreNotFound: true });
+  }
+};

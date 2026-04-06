@@ -34,8 +34,15 @@ type SearchEntry = {
   detail: string;
 };
 
+type Bookmark = {
+  name: string;
+  bucket: string;
+  prefix: string;
+};
+
 const RECENT_STORAGE_KEY = 'better-gcs:recent';
 const FAVORITES_STORAGE_KEY = 'better-gcs:favorites';
+const BOOKMARKS_STORAGE_KEY = 'better-gcs:bookmarks';
 const RECENT_LIMIT = 8;
 
 const formatBytes = (size: number) => {
@@ -159,6 +166,15 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
   const [showPathModal, setShowPathModal] = useState(false);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [folderNameInput, setFolderNameInput] = useState('');
+  const [showRenameFolder, setShowRenameFolder] = useState(false);
+  const [renameFolderInput, setRenameFolderInput] = useState('');
+  const [renamingPrefix, setRenamingPrefix] = useState('');
+  const [showAddBookmark, setShowAddBookmark] = useState(false);
+  const [bookmarkNameInput, setBookmarkNameInput] = useState('');
+  const [bookmarkBucket, setBookmarkBucket] = useState('');
+  const [bookmarkPrefix, setBookmarkPrefix] = useState('');
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [showBookmarks, setShowBookmarks] = useState(false);
   const [pendingSelection, setPendingSelection] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(
@@ -173,6 +189,13 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
   useEffect(() => {
     setFavoriteBuckets(readStoredList(FAVORITES_STORAGE_KEY));
     setRecentBuckets(readStoredList(RECENT_STORAGE_KEY));
+    try {
+      const raw = localStorage.getItem(BOOKMARKS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setBookmarks(parsed);
+      }
+    } catch {}
     setStorageLoaded(true);
   }, []);
 
@@ -185,6 +208,13 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
     if (!storageLoaded) return;
     writeStoredList(RECENT_STORAGE_KEY, recentBuckets);
   }, [recentBuckets, storageLoaded]);
+
+  useEffect(() => {
+    if (!storageLoaded) return;
+    try {
+      localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(bookmarks));
+    } catch {}
+  }, [bookmarks, storageLoaded]);
 
   const fetchBuckets = (projectOverride?: string) => {
     const pid = projectOverride ?? gcsProjectId;
@@ -291,10 +321,12 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
       if (showSearch) setShowSearch(false);
       if (showPathModal) setShowPathModal(false);
       if (showCreateFolder) setShowCreateFolder(false);
+      if (showRenameFolder) setShowRenameFolder(false);
+      if (showAddBookmark) setShowAddBookmark(false);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showSearch, showPathModal, showCreateFolder, isActive]);
+  }, [showSearch, showPathModal, showCreateFolder, showRenameFolder, showAddBookmark, isActive]);
 
   const ensureTreeLoaded = async (bucket: string, prefix: string, force = false) => {
     if (!bucket) return;
@@ -600,6 +632,16 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
         disabled: !isPrefix,
       },
       {
+        label: 'Bookmark this path',
+        action: () => handleAddBookmark(currentBucket, item.name),
+        disabled: !isPrefix,
+      },
+      {
+        label: 'Rename folder...',
+        action: () => handleRenameFolder(item.name),
+        disabled: !isPrefix,
+      },
+      {
         label: 'Download...',
         action: () => handleDownload(item),
       },
@@ -620,6 +662,10 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
       {
         label: 'Copy current path',
         action: () => copyText(gsPath),
+      },
+      {
+        label: 'Bookmark this path',
+        action: () => handleAddBookmark(),
       },
       {
         label: 'Create folder...',
@@ -657,6 +703,68 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
       delimiter: '/',
     });
     setListing(data);
+  };
+
+  const handleRenameFolder = (prefix: string) => {
+    if (!currentBucket) return;
+    setRenamingPrefix(prefix);
+    const parts = prefix.split('/').filter(Boolean);
+    const folderName = parts[parts.length - 1] || '';
+    setRenameFolderInput(folderName);
+    setShowRenameFolder(true);
+  };
+
+  const submitRenameFolder = async () => {
+    if (!currentBucket || !renamingPrefix || !renameFolderInput.trim()) return;
+    setShowRenameFolder(false);
+    setStatus('Renaming folder...');
+    const result = await window.gcs.renamePrefix({
+      bucket: currentBucket,
+      prefix: renamingPrefix,
+      newName: renameFolderInput.trim(),
+    });
+    if (!result.ok) {
+      setError(result.error ?? 'Rename folder failed');
+      setStatus('');
+      return;
+    }
+    setStatus('Folder renamed');
+    setTimeout(() => setStatus(''), 1500);
+    const data = await window.gcs.listObjects({
+      bucket: currentBucket,
+      prefix: currentPrefix,
+      delimiter: '/',
+    });
+    setListing(data);
+  };
+
+  const handleAddBookmark = (bucket?: string, prefix?: string) => {
+    const targetBucket = bucket || currentBucket;
+    const targetPrefix = prefix || currentPrefix;
+    if (!targetBucket) return;
+    setBookmarkBucket(targetBucket);
+    setBookmarkPrefix(targetPrefix);
+    const parts = targetPrefix.split('/').filter(Boolean);
+    const suggestedName = parts.length > 0 ? parts[parts.length - 1] : targetBucket;
+    setBookmarkNameInput(suggestedName);
+    setShowAddBookmark(true);
+  };
+
+  const submitAddBookmark = () => {
+    const trimmed = bookmarkNameInput.trim();
+    if (!trimmed || !bookmarkBucket) return;
+    setBookmarks((prev) => [
+      ...prev.filter((b) => b.bucket !== bookmarkBucket || b.prefix !== bookmarkPrefix),
+      { name: trimmed, bucket: bookmarkBucket, prefix: bookmarkPrefix },
+    ]);
+    setShowAddBookmark(false);
+    setBookmarkNameInput('');
+  };
+
+  const removeBookmark = (bookmark: Bookmark) => {
+    setBookmarks((prev) =>
+      prev.filter((b) => b.bucket !== bookmark.bucket || b.prefix !== bookmark.prefix)
+    );
   };
 
   const handleDownload = async (item: Item) => {
@@ -948,6 +1056,54 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
                     </div>
                   );
                 })
+              )}
+            </div>
+          ) : null}
+        </div>
+        <div className="sidebar-section">
+          <div className="section-header">
+            <button
+              className="section-toggle"
+              onClick={() => setShowBookmarks((prev) => !prev)}
+            >
+              <span>Bookmarks</span>
+              <span className="section-icon">{showBookmarks ? '-' : '+'}</span>
+            </button>
+            <button
+              className="section-add"
+              onClick={() => handleAddBookmark()}
+              aria-label="Add bookmark"
+              disabled={!currentBucket}
+            >
+              +
+            </button>
+          </div>
+          {showBookmarks ? (
+            <div className="bucket-list compact">
+              {bookmarks.length === 0 ? (
+                <div className="list-empty">No bookmarks yet.</div>
+              ) : (
+                bookmarks.map((bookmark) => (
+                  <div key={`${bookmark.bucket}/${bookmark.prefix}`} className="bucket-row">
+                    <button
+                      className="bucket-link"
+                      onClick={() => navigate(bookmark.bucket, bookmark.prefix, true)}
+                    >
+                      <span className="bucket-name">{bookmark.name}</span>
+                      <span className="bucket-meta">
+                        {bookmark.bucket}
+                        {bookmark.prefix ? `/${bookmark.prefix}` : ''}
+                      </span>
+                    </button>
+                    <button
+                      className="favorite-toggle compact active"
+                      onClick={() => removeBookmark(bookmark)}
+                      aria-label="Remove bookmark"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))
               )}
             </div>
           ) : null}
@@ -1289,6 +1445,80 @@ const GcsTab = ({ isActive = true }: GcsTabProps) => {
                 </button>
                 <button className="primary-button" type="submit" disabled={!folderNameInput.trim()}>
                   Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {showRenameFolder ? (
+        <div className="modal-backdrop" onClick={() => setShowRenameFolder(false)}>
+          <div className="modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Rename Folder</div>
+                <div className="modal-note">Enter a new name for the folder.</div>
+              </div>
+            </div>
+            <form
+              className="modal-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitRenameFolder();
+              }}
+            >
+              <input
+                className="modal-input"
+                value={renameFolderInput}
+                onChange={(event) => setRenameFolderInput(event.target.value)}
+                placeholder="New folder name"
+                autoFocus
+              />
+              <div className="modal-actions">
+                <button className="secondary-button" type="button" onClick={() => setShowRenameFolder(false)}>
+                  Cancel
+                </button>
+                <button className="primary-button" type="submit" disabled={!renameFolderInput.trim()}>
+                  Rename
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {showAddBookmark ? (
+        <div className="modal-backdrop" onClick={() => setShowAddBookmark(false)}>
+          <div className="modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <div className="modal-title">Add Bookmark</div>
+                <div className="modal-note">
+                  Save a bookmark for gs://{bookmarkBucket}/{bookmarkPrefix}
+                </div>
+              </div>
+            </div>
+            <form
+              className="modal-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitAddBookmark();
+              }}
+            >
+              <input
+                className="modal-input"
+                value={bookmarkNameInput}
+                onChange={(event) => setBookmarkNameInput(event.target.value)}
+                placeholder="Bookmark name"
+                autoFocus
+              />
+              <div className="modal-actions">
+                <button className="secondary-button" type="button" onClick={() => setShowAddBookmark(false)}>
+                  Cancel
+                </button>
+                <button className="primary-button" type="submit" disabled={!bookmarkNameInput.trim()}>
+                  Save
                 </button>
               </div>
             </form>
