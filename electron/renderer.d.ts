@@ -25,6 +25,8 @@ import type {
   ListPipelineJobsResponse,
   PipelineJob,
   RenamePrefixRequest,
+  SecretManagerSecret,
+  SecretManagerVersion,
   StartDragRequest,
   UploadRequest,
 } from '../shared/types';
@@ -72,6 +74,12 @@ declare global {
     };
     gce: {
       listInstances: (req: ListGceInstancesRequest) => Promise<IpcResult<ListGceInstancesResponse>>;
+    };
+    secretmanager: {
+      listSecrets: (projectId: string) => Promise<IpcResult<SecretManagerSecret[]>>;
+      listVersions: (secretName: string) => Promise<IpcResult<SecretManagerVersion[]>>;
+      accessVersion: (versionName: string) => Promise<IpcResult<string>>;
+      getLatestValue: (secretName: string) => Promise<IpcResult<string>>;
     };
     shell: {
       openExternal: (url: string) => Promise<void>;

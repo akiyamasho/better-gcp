@@ -6,12 +6,13 @@ import VertexAITab from './VertexAITab';
 import PipelinesTab from './PipelinesTab';
 import CloudRunTab from './CloudRunTab';
 import GceTab from './GceTab';
+import SecretManagerTab from './SecretManagerTab';
 
-type ServiceTab = 'gcs' | 'bigquery' | 'vertex-ai' | 'pipelines' | 'cloud-run' | 'gce';
+type ServiceTab = 'gcs' | 'bigquery' | 'vertex-ai' | 'pipelines' | 'cloud-run' | 'gce' | 'secret-manager';
 type ThemePreference = 'system' | 'light' | 'dark';
 type UpdateStatus = 'idle' | 'checking' | 'available' | 'current' | 'error' | 'installing';
 
-const TAB_ORDER: ServiceTab[] = ['gcs', 'bigquery', 'vertex-ai', 'pipelines', 'cloud-run', 'gce'];
+const TAB_ORDER: ServiceTab[] = ['gcs', 'bigquery', 'vertex-ai', 'pipelines', 'cloud-run', 'gce', 'secret-manager'];
 
 const TAB_LABELS: Record<ServiceTab, string> = {
   gcs: 'Cloud Storage',
@@ -20,6 +21,7 @@ const TAB_LABELS: Record<ServiceTab, string> = {
   pipelines: 'AI Pipelines',
   'cloud-run': 'Cloud Run',
   gce: 'Compute Engine',
+  'secret-manager': 'Secret Manager',
 };
 
 const THEME_STORAGE_KEY = 'better-gcp:theme';
@@ -230,6 +232,9 @@ const App = () => {
         </div>
         <div className={`service-panel ${activeService === 'gce' ? 'active' : ''}`}>
           <GceTab isActive={activeService === 'gce'} />
+        </div>
+        <div className={`service-panel ${activeService === 'secret-manager' ? 'active' : ''}`}>
+          <SecretManagerTab isActive={activeService === 'secret-manager'} />
         </div>
       </div>
 

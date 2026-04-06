@@ -28,6 +28,7 @@ import { listCustomJobs, cancelCustomJob, deleteCustomJob } from './vertexai';
 import { listPipelineJobs, getPipelineJob, cancelPipelineJob, deletePipelineJob } from './vertexai-pipelines';
 import { listCloudRunServices, getCloudRunService } from './cloudrun';
 import { listGceInstances } from './gce';
+import { listSecrets, listSecretVersions, getLatestSecretValue, accessSecretVersion } from './secretmanager';
 import { checkForUpdates, installLatestUpdate } from './updates';
 
 const isDev = Boolean(process.env.VITE_DEV_SERVER_URL);
@@ -325,6 +326,38 @@ ipcMain.handle('cloudrun:get-service', async (_event, req) => {
 ipcMain.handle('gce:list-instances', async (_event, req) => {
   try {
     return { ok: true, data: await listGceInstances(req) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('secretmanager:list-secrets', async (_event, req) => {
+  try {
+    return { ok: true, data: await listSecrets(req) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('secretmanager:list-versions', async (_event, secretName: string) => {
+  try {
+    return { ok: true, data: await listSecretVersions(secretName) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('secretmanager:access-version', async (_event, versionName: string) => {
+  try {
+    return { ok: true, data: await accessSecretVersion(versionName) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('secretmanager:get-latest-value', async (_event, secretName: string) => {
+  try {
+    return { ok: true, data: await getLatestSecretValue(secretName) };
   } catch (err) {
     return { ok: false, error: String(err) };
   }

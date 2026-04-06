@@ -70,6 +70,17 @@ contextBridge.exposeInMainWorld('gce', {
     ipcRenderer.invoke('gce:list-instances', req),
 });
 
+contextBridge.exposeInMainWorld('secretmanager', {
+  listSecrets: (projectId: string) =>
+    ipcRenderer.invoke('secretmanager:list-secrets', { projectId }),
+  listVersions: (secretName: string) =>
+    ipcRenderer.invoke('secretmanager:list-versions', secretName),
+  accessVersion: (versionName: string) =>
+    ipcRenderer.invoke('secretmanager:access-version', versionName),
+  getLatestValue: (secretName: string) =>
+    ipcRenderer.invoke('secretmanager:get-latest-value', secretName),
+});
+
 contextBridge.exposeInMainWorld('shell', {
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
 });

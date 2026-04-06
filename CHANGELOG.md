@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.8.0] - 2026-04-06
+
+### Added
+- **Secret Manager tab** — browse and access secrets across projects with a clean interface.
+  - **Copy Latest Value** button in main table — one-click copy of the latest secret version value to clipboard.
+  - Click any secret to view all versions with their states (ENABLED, DISABLED, DESTROYED).
+  - Copy individual version values with per-version copy buttons.
+  - Filter secrets by name with search input.
+  - Project selector with localStorage persistence.
+
 ## [4.7.0] - 2026-04-06
 
 ### Added

@@ -335,3 +335,32 @@ export type ListGceInstancesRequest = {
 export type ListGceInstancesResponse = {
   instances: (GceInstance | TpuInstance)[];
 };
+
+export type SecretManagerSecret = {
+  name: string;
+  displayName: string;
+  createTime: string;
+  replication: string;
+  labels: Record<string, string>;
+};
+
+export type SecretManagerVersion = {
+  name: string;
+  versionId: string;
+  state: string;
+  createTime: string;
+  destroyTime?: string;
+  replicationStatus?: unknown;
+};
+
+export type ListSecretsRequest = {
+  projectId: string;
+};
+
+export type AccessSecretVersionRequest = {
+  versionName: string;
+};
+
+export type GetLatestSecretValueRequest = {
+  secretName: string;
+};
