@@ -1,6 +1,6 @@
 # Better GCP
 
-![Version](https://img.shields.io/badge/version-v4.9.0-blue)
+![Version](https://img.shields.io/badge/version-v4.9.1-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
 
 Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI. All data stays on your machine. No telemetry, no cloud backend.
@@ -9,8 +9,8 @@ The macOS app can also check GitHub releases on startup and install the newest `
 
 ## Download
 
-- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/download/v4.9.0/Better%20GCP-4.9.0-arm64.dmg)**
-- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/download/v4.9.0/Better%20GCP-4.9.0-arm64-mac.zip)**
+- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/download/v4.9.1/Better%20GCP-4.9.1-arm64.dmg)**
+- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/download/v4.9.1/Better%20GCP-4.9.1-arm64-mac.zip)**
 
 > **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
 > ```bash

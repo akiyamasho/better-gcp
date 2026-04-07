@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.9.1] - 2026-04-07
+
+### Fixed
+- **Vector Search tab UI** — toolbar now spans full width with proper layout
+- **Index/Endpoint tabs** — redesigned as pill-style tabs with clean borders and hover states instead of button-like appearance
+- **Console URLs** — fixed to use correct format with location in path (e.g., `/vertex-ai/locations/{region}/indexes/{id}/deployments`)
+- **Project selector** — simplified to single-project mode like AI Pipelines tab (removed multi-project complexity)
+
 ## [4.9.0] - 2026-04-07
 
 ### Added

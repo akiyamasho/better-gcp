@@ -2,8 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { VectorSearchIndex, IndexEndpoint } from '@shared/types';
 import RegionSelect from './RegionSelect';
 
-const KNOWN_PROJECTS_KEY = 'better-gcp:vectorsearch-known-projects';
-const ACTIVE_PROJECTS_KEY = 'better-gcp:vectorsearch-active-projects';
 const REGIONS_KEY = 'better-gcp:vectorsearch-regions';
 
 function readStringList(key: string): string[] {
@@ -51,12 +49,12 @@ function statusEmoji(state: string): string {
 
 function consoleUrl(index: VectorSearchIndex, projectId: string): string {
   const id = indexName(index.name);
-  return `https://console.cloud.google.com/vertex-ai/matching-engine/indexes/${id}?project=${projectId}`;
+  return `https://console.cloud.google.com/vertex-ai/locations/${index.region}/indexes/${id}/deployments?project=${projectId}`;
 }
 
 function endpointConsoleUrl(endpoint: IndexEndpoint, projectId: string): string {
   const id = indexName(endpoint.name);
-  return `https://console.cloud.google.com/vertex-ai/matching-engine/index-endpoints/${id}?project=${projectId}`;
+  return `https://console.cloud.google.com/vertex-ai/locations/${endpoint.region}/index-endpoints/${id}?project=${projectId}`;
 }
 
 type VectorSearchTabProps = {
@@ -64,10 +62,8 @@ type VectorSearchTabProps = {
 };
 
 const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
-  const [knownProjects, setKnownProjects] = useState<string[]>(() => readStringList(KNOWN_PROJECTS_KEY));
-  const [activeProjects, setActiveProjects] = useState<Set<string>>(() => new Set(readStringList(ACTIVE_PROJECTS_KEY)));
+  const [projectId, setProjectId] = useState('');
   const [projectInput, setProjectInput] = useState('');
-  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
 
   const [regions, setRegions] = useState<string[]>(() => {
     const saved = readStringList(REGIONS_KEY);
@@ -82,48 +78,21 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
   const [selectedView, setSelectedView] = useState<'indices' | 'endpoints'>('indices');
 
   useEffect(() => {
-    writeStringList(KNOWN_PROJECTS_KEY, knownProjects);
-  }, [knownProjects]);
-
-  useEffect(() => {
-    writeStringList(ACTIVE_PROJECTS_KEY, Array.from(activeProjects));
-  }, [activeProjects]);
-
-  useEffect(() => {
     writeStringList(REGIONS_KEY, regions);
   }, [regions]);
 
-  const addProject = useCallback((projectId: string) => {
-    if (!projectId.trim()) return;
-    setKnownProjects((prev) => (prev.includes(projectId) ? prev : [...prev, projectId]));
-    setActiveProjects((prev) => new Set(prev).add(projectId));
-    setProjectInput('');
-    setShowProjectDropdown(false);
-  }, []);
-
-  const toggleProject = useCallback((projectId: string) => {
-    setActiveProjects((prev) => {
-      const next = new Set(prev);
-      if (next.has(projectId)) {
-        next.delete(projectId);
-      } else {
-        next.add(projectId);
+  useEffect(() => {
+    (window as any).bq?.listProjects?.().then((res: any) => {
+      if (res?.ok && res.data?.length > 0) {
+        const first = res.data[0].id;
+        setProjectId(first);
+        setProjectInput(first);
       }
-      return next;
-    });
-  }, []);
-
-  const removeProject = useCallback((projectId: string) => {
-    setKnownProjects((prev) => prev.filter((p) => p !== projectId));
-    setActiveProjects((prev) => {
-      const next = new Set(prev);
-      next.delete(projectId);
-      return next;
     });
   }, []);
 
   const loadData = useCallback(async () => {
-    if (activeProjects.size === 0 || regions.length === 0) {
+    if (!projectId || regions.length === 0) {
       setIndices([]);
       setEndpoints([]);
       return;
@@ -136,24 +105,22 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
       const allIndices: VectorSearchIndex[] = [];
       const allEndpoints: IndexEndpoint[] = [];
 
-      for (const projectId of Array.from(activeProjects)) {
-        for (const region of regions) {
-          try {
-            const [idxResult, epResult] = await Promise.all([
-              window.vectorsearch.listIndices({ projectId, region }),
-              window.vectorsearch.listEndpoints({ projectId, region }),
-            ]);
+      for (const region of regions) {
+        try {
+          const [idxResult, epResult] = await Promise.all([
+            window.vectorsearch.listIndices({ projectId, region }),
+            window.vectorsearch.listEndpoints({ projectId, region }),
+          ]);
 
-            if (idxResult.ok) {
-              allIndices.push(...idxResult.data.indices.map((i) => ({ ...i, projectId } as VectorSearchIndex & { projectId: string })));
-            }
-            if (epResult.ok) {
-              allEndpoints.push(...epResult.data.endpoints.map((e) => ({ ...e, projectId } as IndexEndpoint & { projectId: string })));
-            }
-          } catch (err) {
-            // Continue loading other regions even if one fails
-            console.error(`Failed to load ${region} for ${projectId}:`, err);
+          if (idxResult.ok) {
+            allIndices.push(...idxResult.data.indices);
           }
+          if (epResult.ok) {
+            allEndpoints.push(...epResult.data.endpoints);
+          }
+        } catch (err) {
+          // Continue loading other regions even if one fails
+          console.error(`Failed to load ${region} for ${projectId}:`, err);
         }
       }
 
@@ -164,13 +131,13 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
     } finally {
       setLoading(false);
     }
-  }, [activeProjects, regions]);
+  }, [projectId, regions]);
 
   useEffect(() => {
-    if (isActive) {
+    if (projectId) {
       void loadData();
     }
-  }, [isActive, loadData]);
+  }, [projectId, regions, loadData]);
 
   const toggleSelectIndex = useCallback((name: string) => {
     setSelectedIndices((prev) => {
@@ -211,83 +178,31 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
     await loadData();
   }, [selectedIndices, loadData]);
 
-  const projectOptions = useMemo(() => {
-    if (!projectInput.trim()) return knownProjects;
-    const lower = projectInput.toLowerCase();
-    return knownProjects.filter((p) => p.toLowerCase().includes(lower));
-  }, [knownProjects, projectInput]);
-
   return (
-    <div className="vai-container">
+    <div className="vai-layout">
       {/* Top toolbar */}
       <div className="vai-toolbar">
         <div className="vai-toolbar-section">
-          <div className="vai-project-selector">
-            <label className="vai-toolbar-label">Projects</label>
-            <div className="vai-project-input-wrapper">
-              <input
-                className="vai-project-input"
-                value={projectInput}
-                onChange={(e) => {
-                  setProjectInput(e.target.value);
-                  setShowProjectDropdown(true);
-                }}
-                onFocus={() => setShowProjectDropdown(true)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && projectInput.trim()) {
-                    addProject(projectInput.trim());
-                  } else if (e.key === 'Escape') {
-                    setShowProjectDropdown(false);
-                  }
-                }}
-                placeholder="Enter project ID"
-              />
-              {showProjectDropdown && (
-                <div className="vai-project-dropdown">
-                  {projectOptions.length === 0 && projectInput.trim() && (
-                    <button
-                      className="vai-project-option vai-project-option-add"
-                      onClick={() => addProject(projectInput.trim())}
-                    >
-                      + Add "{projectInput.trim()}"
-                    </button>
-                  )}
-                  {projectOptions.map((p) => (
-                    <div key={p} className="vai-project-option">
-                      <input
-                        type="checkbox"
-                        checked={activeProjects.has(p)}
-                        onChange={() => toggleProject(p)}
-                      />
-                      <span className="vai-project-option-label">{p}</span>
-                      <button
-                        className="vai-project-option-remove"
-                        onClick={() => removeProject(p)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="vai-project-pills">
-              {Array.from(activeProjects).map((p) => (
-                <div key={p} className="vai-project-pill">
-                  {p}
-                  <button className="vai-project-pill-remove" onClick={() => toggleProject(p)}>
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+          <form
+            className="vai-project-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (projectInput.trim()) setProjectId(projectInput.trim());
+            }}
+          >
+            <input
+              className="vai-project-input"
+              placeholder="Project ID"
+              value={projectInput}
+              onChange={(e) => setProjectInput(e.target.value)}
+            />
+            <button className="primary-button" type="submit">Load</button>
+          </form>
+          <button className="secondary-button" onClick={() => void loadData()} disabled={loading}>
+            Refresh
+          </button>
 
           <RegionSelect regions={regions} onChange={setRegions} />
-
-          <button className="primary-button" onClick={() => void loadData()}>
-            Load
-          </button>
         </div>
 
         <div className="vai-toolbar-section">
@@ -325,14 +240,14 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
       <div className="vai-body">
         <div className="vai-table-area">
           {loading && <div className="vai-loading">Loading vector search resources...</div>}
-          {!loading && activeProjects.size === 0 && (
-            <div className="empty-state">Enter a project ID above.</div>
+          {!loading && !projectId && (
+            <div className="empty-state">Enter a project ID and click Load.</div>
           )}
-          {!loading && activeProjects.size > 0 && selectedView === 'indices' && indices.length === 0 && (
-            <div className="empty-state">No indices found in selected projects and regions.</div>
+          {!loading && projectId && selectedView === 'indices' && indices.length === 0 && (
+            <div className="empty-state">No indices found in selected regions.</div>
           )}
-          {!loading && activeProjects.size > 0 && selectedView === 'endpoints' && endpoints.length === 0 && (
-            <div className="empty-state">No index endpoints found in selected projects and regions.</div>
+          {!loading && projectId && selectedView === 'endpoints' && endpoints.length === 0 && (
+            <div className="empty-state">No index endpoints found in selected regions.</div>
           )}
 
           {/* Indices table */}
@@ -349,7 +264,6 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
                       />
                     </th>
                     <th>Index</th>
-                    <th>Project</th>
                     <th>Region</th>
                     <th>State</th>
                     <th>Vectors</th>
@@ -370,7 +284,6 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
                         />
                       </td>
                       <td className="vai-td-name">{idx.displayName}</td>
-                      <td className="vai-td-region">{(idx as any).projectId || '-'}</td>
                       <td className="vai-td-region">{idx.region}</td>
                       <td className="vai-td-state">
                         <span className={`vai-state vai-state-${idx.state.toLowerCase()}`}>
@@ -388,7 +301,7 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
                       <td className="vai-td-links">
                         <button
                           className="vai-link-btn"
-                          onClick={() => window.shell.openExternal(consoleUrl(idx, (idx as any).projectId))}
+                          onClick={() => window.shell.openExternal(consoleUrl(idx, projectId))}
                         >
                           Console
                         </button>
@@ -407,7 +320,6 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
                 <thead>
                   <tr>
                     <th>Endpoint</th>
-                    <th>Project</th>
                     <th>Region</th>
                     <th>Public</th>
                     <th>Network</th>
@@ -420,7 +332,6 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
                   {endpoints.map((ep) => (
                     <tr key={ep.name} className="vai-row">
                       <td className="vai-td-name">{ep.displayName}</td>
-                      <td className="vai-td-region">{(ep as any).projectId || '-'}</td>
                       <td className="vai-td-region">{ep.region}</td>
                       <td className="vai-td-region">{ep.publicEndpointEnabled ? '✅ Yes' : '❌ No'}</td>
                       <td className="vai-td-mono" style={{ fontSize: 11 }}>
@@ -431,7 +342,7 @@ const VectorSearchTab = ({ isActive }: VectorSearchTabProps) => {
                       <td className="vai-td-links">
                         <button
                           className="vai-link-btn"
-                          onClick={() => window.shell.openExternal(endpointConsoleUrl(ep, (ep as any).projectId))}
+                          onClick={() => window.shell.openExternal(endpointConsoleUrl(ep, projectId))}
                         >
                           Console
                         </button>
