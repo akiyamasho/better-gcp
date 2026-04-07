@@ -12,6 +12,8 @@ import type {
   ListCustomJobsRequest,
   ListGceInstancesRequest,
   ListPipelineJobsRequest,
+  ListVectorSearchIndicesRequest,
+  ListIndexEndpointsRequest,
   ListObjectsRequest,
   RenamePrefixRequest,
   StartDragRequest,
@@ -56,6 +58,12 @@ contextBridge.exposeInMainWorld('pipelines', {
     ipcRenderer.invoke('pipelines:get', req),
   cancel: (jobName: string) => ipcRenderer.invoke('pipelines:cancel', jobName),
   delete: (jobName: string) => ipcRenderer.invoke('pipelines:delete', jobName),
+});
+
+contextBridge.exposeInMainWorld('vectorsearch', {
+  listIndices: (req: ListVectorSearchIndicesRequest) => ipcRenderer.invoke('vectorsearch:list-indices', req),
+  listEndpoints: (req: ListIndexEndpointsRequest) => ipcRenderer.invoke('vectorsearch:list-endpoints', req),
+  deleteIndex: (indexName: string) => ipcRenderer.invoke('vectorsearch:delete-index', indexName),
 });
 
 contextBridge.exposeInMainWorld('cloudrun', {

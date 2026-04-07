@@ -364,3 +364,73 @@ export type AccessSecretVersionRequest = {
 export type GetLatestSecretValueRequest = {
   secretName: string;
 };
+
+// Vertex AI Vector Search (Matching Engine)
+
+export type VectorSearchIndex = {
+  name: string;
+  displayName: string;
+  region: string;
+  state: string;
+  createTime: string;
+  updateTime: string;
+  deployedIndexes: { id: string; indexEndpoint: string }[];
+  indexStats?: { vectorsCount: string; shardsCount: number };
+  metadata?: {
+    contentsDeltaUri?: string;
+    config?: {
+      dimensions?: number;
+      approximateNeighborsCount?: number;
+      distanceMeasureType?: string;
+      algorithmConfig?: {
+        treeAhConfig?: { leafNodeEmbeddingCount?: string };
+        bruteForceConfig?: Record<string, never>;
+      };
+    };
+  };
+  metadataSchemaUri?: string;
+  labels: Record<string, string>;
+  indexUpdateMethod?: string;
+};
+
+export type IndexEndpoint = {
+  name: string;
+  displayName: string;
+  region: string;
+  createTime: string;
+  updateTime: string;
+  network: string;
+  publicEndpointEnabled: boolean;
+  publicEndpointDomainName?: string;
+  deployedIndexes: DeployedIndexRef[];
+  labels: Record<string, string>;
+};
+
+export type DeployedIndexRef = {
+  id: string;
+  index: string;
+  displayName?: string;
+  createTime?: string;
+  privateEndpoints?: { matchGrpcAddress?: string; serviceAttachment?: string };
+  dedicatedServingEndpoint?: { publicEndpointDomainName?: string };
+  automaticResources?: { minReplicaCount?: number; maxReplicaCount?: number };
+  deployedIndexAuthConfig?: { authProvider?: unknown };
+};
+
+export type ListVectorSearchIndicesRequest = {
+  projectId: string;
+  region: string;
+};
+
+export type ListVectorSearchIndicesResponse = {
+  indices: VectorSearchIndex[];
+};
+
+export type ListIndexEndpointsRequest = {
+  projectId: string;
+  region: string;
+};
+
+export type ListIndexEndpointsResponse = {
+  endpoints: IndexEndpoint[];
+};

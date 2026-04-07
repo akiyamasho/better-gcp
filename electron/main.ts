@@ -26,6 +26,7 @@ import {
 } from './bigquery';
 import { listCustomJobs, cancelCustomJob, deleteCustomJob } from './vertexai';
 import { listPipelineJobs, getPipelineJob, cancelPipelineJob, deletePipelineJob } from './vertexai-pipelines';
+import { listVectorSearchIndices, listIndexEndpoints, deleteIndex } from './vectorsearch';
 import { listCloudRunServices, getCloudRunService } from './cloudrun';
 import { listGceInstances } from './gce';
 import { listSecrets, listSecretVersions, getLatestSecretValue, accessSecretVersion } from './secretmanager';
@@ -301,6 +302,31 @@ ipcMain.handle('pipelines:cancel', async (_event, jobName: string) => {
 ipcMain.handle('pipelines:delete', async (_event, jobName: string) => {
   try {
     await deletePipelineJob(jobName);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('vectorsearch:list-indices', async (_event, req) => {
+  try {
+    return { ok: true, data: await listVectorSearchIndices(req) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('vectorsearch:list-endpoints', async (_event, req) => {
+  try {
+    return { ok: true, data: await listIndexEndpoints(req) };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+});
+
+ipcMain.handle('vectorsearch:delete-index', async (_event, indexName: string) => {
+  try {
+    await deleteIndex(indexName);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };

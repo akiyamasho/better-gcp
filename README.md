@@ -1,6 +1,6 @@
 # Better GCP
 
-![Version](https://img.shields.io/badge/version-v4.6.0-blue)
+![Version](https://img.shields.io/badge/version-v4.9.0-blue)
 ![Release](https://img.shields.io/badge/release-stable-brightgreen)
 
 Local-only Electron app for browsing Google Cloud Platform services with a Finder-like UI. All data stays on your machine. No telemetry, no cloud backend.
@@ -9,8 +9,8 @@ The macOS app can also check GitHub releases on startup and install the newest `
 
 ## Download
 
-- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/download/v4.6.0/Better%20GCP-4.6.0-arm64.dmg)**
-- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/download/v4.6.0/Better%20GCP-4.6.0-arm64-mac.zip)**
+- **[Download DMG (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/download/v4.9.0/Better%20GCP-4.9.0-arm64.dmg)**
+- **[Download ZIP (Apple Silicon)](https://github.com/akiyamasho/better-gcp/releases/download/v4.9.0/Better%20GCP-4.9.0-arm64-mac.zip)**
 
 > **Note:** This app is not code-signed with an Apple Developer ID. macOS may show "damaged and can't be opened" after downloading. To fix, run in Terminal:
 > ```bash
@@ -69,6 +69,17 @@ The macOS app can also check GitHub releases on startup and install the newest `
 - Node-level Cloud Logging links (filtered to the selected task)
 - Auto-refresh for active pipelines (every 15s) with manual refresh button
 - Direct links to GCP Console and Cloud Logging
+
+### Vector Search (Vertex AI)
+
+- Browse Vector Search indices and index endpoints across multiple projects and regions
+- Multi-project and multi-region support for viewing indices across your organization
+- Toggle between Indices and Endpoints views with tab-based navigation
+- Index metrics: vector count, dimensions, deployment status
+- Endpoint details: network, public endpoint status, deployed indices count
+- Batch delete indices with confirmation
+- Direct links to GCP Console for detailed monitoring
+- Persistent project and region selections across sessions
 
 ### AI Jobs (Vertex AI)
 

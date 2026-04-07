@@ -4,21 +4,23 @@ import GcsTab from './GcsTab';
 import BigQueryTab from './BigQueryTab';
 import VertexAITab from './VertexAITab';
 import PipelinesTab from './PipelinesTab';
+import VectorSearchTab from './VectorSearchTab';
 import CloudRunTab from './CloudRunTab';
 import GceTab from './GceTab';
 import SecretManagerTab from './SecretManagerTab';
 
-type ServiceTab = 'gcs' | 'bigquery' | 'vertex-ai' | 'pipelines' | 'cloud-run' | 'gce' | 'secret-manager';
+type ServiceTab = 'gcs' | 'bigquery' | 'vertex-ai' | 'pipelines' | 'vector-search' | 'cloud-run' | 'gce' | 'secret-manager';
 type ThemePreference = 'system' | 'light' | 'dark';
 type UpdateStatus = 'idle' | 'checking' | 'available' | 'current' | 'error' | 'installing';
 
-const TAB_ORDER: ServiceTab[] = ['gcs', 'bigquery', 'vertex-ai', 'pipelines', 'cloud-run', 'gce', 'secret-manager'];
+const TAB_ORDER: ServiceTab[] = ['gcs', 'bigquery', 'vertex-ai', 'pipelines', 'vector-search', 'cloud-run', 'gce', 'secret-manager'];
 
 const TAB_LABELS: Record<ServiceTab, string> = {
   gcs: 'Cloud Storage',
   bigquery: 'BigQuery',
   'vertex-ai': 'AI Jobs',
   pipelines: 'AI Pipelines',
+  'vector-search': 'Vector Search',
   'cloud-run': 'Cloud Run',
   gce: 'Compute Engine',
   'secret-manager': 'Secret Manager',
@@ -226,6 +228,9 @@ const App = () => {
         </div>
         <div className={`service-panel ${activeService === 'pipelines' ? 'active' : ''}`}>
           <PipelinesTab isActive={activeService === 'pipelines'} />
+        </div>
+        <div className={`service-panel ${activeService === 'vector-search' ? 'active' : ''}`}>
+          <VectorSearchTab isActive={activeService === 'vector-search'} />
         </div>
         <div className={`service-panel ${activeService === 'cloud-run' ? 'active' : ''}`}>
           <CloudRunTab isActive={activeService === 'cloud-run'} />

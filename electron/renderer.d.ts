@@ -23,6 +23,10 @@ import type {
   ListObjectsResponse,
   ListPipelineJobsRequest,
   ListPipelineJobsResponse,
+  ListVectorSearchIndicesRequest,
+  ListVectorSearchIndicesResponse,
+  ListIndexEndpointsRequest,
+  ListIndexEndpointsResponse,
   PipelineJob,
   RenamePrefixRequest,
   SecretManagerSecret,
@@ -67,6 +71,11 @@ declare global {
       get: (req: { projectId: string; region: string; pipelineJobId: string }) => Promise<IpcResult<PipelineJob>>;
       cancel: (jobName: string) => Promise<{ ok: boolean; error?: string }>;
       delete: (jobName: string) => Promise<{ ok: boolean; error?: string }>;
+    };
+    vectorsearch: {
+      listIndices: (req: ListVectorSearchIndicesRequest) => Promise<IpcResult<ListVectorSearchIndicesResponse>>;
+      listEndpoints: (req: ListIndexEndpointsRequest) => Promise<IpcResult<ListIndexEndpointsResponse>>;
+      deleteIndex: (indexName: string) => Promise<{ ok: boolean; error?: string }>;
     };
     cloudrun: {
       listServices: (req: ListCloudRunServicesRequest) => Promise<IpcResult<ListCloudRunServicesResponse>>;

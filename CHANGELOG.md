@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.9.0] - 2026-04-07
+
+### Added
+- **Vector Search tab (Vertex AI)** — browse and manage Vector Search indices and index endpoints across multiple projects and regions.
+  - **Multi-project & multi-region support** — add multiple projects and select multiple regions to view all indices in one unified view.
+  - **Indices view** — displays index name, project, region, state, vector count, dimensions, deployment count, and creation time.
+  - **Endpoints view** — displays endpoint name, project, region, public endpoint status, network, deployed indices count, and creation time.
+  - **Tab-based navigation** — toggle between Indices and Endpoints views with dedicated tabs showing counts.
+  - **Batch delete** — select multiple indices and delete them with confirmation dialog.
+  - **Direct links** — Console links for both indices and endpoints.
+  - **Persistent state** — project selections and regions saved to localStorage across sessions.
+
 ## [4.8.1] - 2026-04-06
 
 ### Changed
