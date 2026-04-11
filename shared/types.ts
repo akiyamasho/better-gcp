@@ -324,6 +324,10 @@ export type TpuInstance = {
   serviceAccount: string;
   labels: Record<string, string>;
   cidrBlock: string;
+  schedulingConfig?: {
+    preemptible: boolean;
+    reserved: boolean;
+  };
   isTpu: true;
 };
 

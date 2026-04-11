@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.10.0] - 2026-04-11
+
+### Added
+- **GCE tab: Flex-start TPU VM support** — TPU instances now display scheduling information (Flex-start/Preemptible, Reserved, On-demand).
+  - **Flex-start detection** — TPU VMs with preemptible scheduling are tagged as "TPU-Flex" with purple badge.
+  - **Scheduling details** — detail panel shows scheduling configuration for each TPU instance.
+  - **Visual distinction** — Flex-start TPUs use purple badge, regular TPUs use yellow badge.
+
 ## [4.9.1] - 2026-04-07
 
 ### Fixed

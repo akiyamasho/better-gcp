@@ -96,8 +96,12 @@ function getSshCommand(inst: ComputeInstance): string {
   return `gcloud compute ssh ${name} --zone=${zone} --project=${project}`;
 }
 
-function getAcceleratorType(inst: ComputeInstance): 'CPU' | 'GPU' | 'TPU' {
+function getAcceleratorType(inst: ComputeInstance): 'CPU' | 'GPU' | 'TPU' | 'TPU-Flex' {
   if (isTpuInstance(inst)) {
+    // Flex-start TPUs are preemptible
+    if (inst.schedulingConfig?.preemptible) {
+      return 'TPU-Flex';
+    }
     return 'TPU';
   }
   if (inst.hasGpu) {
@@ -717,6 +721,26 @@ const GceTab = ({ isActive }: GceTabProps) => {
                   <>
                     <span className="vai-detail-label">Runtime Version</span>
                     <span>{detail.runtimeVersion}</span>
+                    {detail.schedulingConfig && (
+                      <>
+                        <span className="vai-detail-label">Scheduling</span>
+                        <span>
+                          {detail.schedulingConfig.preemptible && (
+                            <span className="gce-accelerator-tag gce-accelerator-tpu-flex" style={{ marginRight: 8 }}>
+                              Flex-start (Preemptible)
+                            </span>
+                          )}
+                          {detail.schedulingConfig.reserved && (
+                            <span className="gce-accelerator-tag gce-accelerator-tpu" style={{ marginRight: 8 }}>
+                              Reserved
+                            </span>
+                          )}
+                          {!detail.schedulingConfig.preemptible && !detail.schedulingConfig.reserved && (
+                            <span>On-demand</span>
+                          )}
+                        </span>
+                      </>
+                    )}
                   </>
                 )}
                 <span className="vai-detail-label">Created</span>

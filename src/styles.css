@@ -2366,6 +2366,11 @@ body {
   color: #78350f;
 }
 
+.gce-accelerator-tpu-flex {
+  background: #a855f7;
+  color: #faf5ff;
+}
+
 :root[data-theme='dark'] .gce-accelerator-cpu {
   background: #166534;
   color: #dcfce7;
@@ -2379,6 +2384,11 @@ body {
 :root[data-theme='dark'] .gce-accelerator-tpu {
   background: #92400e;
   color: #fef3c7;
+}
+
+:root[data-theme='dark'] .gce-accelerator-tpu-flex {
+  background: #7c3aed;
+  color: #f5f3ff;
 }
 
 .cr-url-cell {

@@ -96,6 +96,14 @@ function convertTpuInstance(raw: any, zone: string, projectId: string): TpuInsta
   const nameParts = (raw.name ?? '').split('/');
   const instanceName = nameParts.length > 0 ? nameParts[nameParts.length - 1] : raw.name ?? '';
 
+  // Extract scheduling config for Flex-start detection
+  const schedulingConfig = raw.schedulingConfig
+    ? {
+        preemptible: raw.schedulingConfig.preemptible ?? false,
+        reserved: raw.schedulingConfig.reserved ?? false,
+      }
+    : undefined;
+
   return {
     name: instanceName,
     zone,
@@ -109,6 +117,7 @@ function convertTpuInstance(raw: any, zone: string, projectId: string): TpuInsta
     serviceAccount: raw.serviceAccount ?? '',
     labels,
     cidrBlock: raw.cidrBlock ?? '',
+    schedulingConfig,
     isTpu: true,
   };
 }
