@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.11.1] - 2026-06-11
+
+### Improved
+- **Custom Jobs: Environment variables display** — redesigned with card-based vertical layout for better readability.
+  - Each env var in its own card with stacked key/value
+  - Scrollable container (max 400px height)
+  - Proper word wrapping for long GCS paths
+  - Monospace font with visual hierarchy
+
 ## [4.11.0] - 2026-06-11
 
 ### Added
