@@ -49,12 +49,12 @@ function statusEmoji(state: string): string {
 
 function consoleUrl(index: VectorSearchIndex, projectId: string): string {
   const id = indexName(index.name);
-  return `https://console.cloud.google.com/vertex-ai/locations/${index.region}/indexes/${id}/deployments?project=${projectId}`;
+  return `https://console.cloud.google.com/agent-platform/locations/${index.region}/indexes/${id}/deployments?project=${projectId}`;
 }
 
 function endpointConsoleUrl(endpoint: IndexEndpoint, projectId: string): string {
   const id = indexName(endpoint.name);
-  return `https://console.cloud.google.com/vertex-ai/locations/${endpoint.region}/index-endpoints/${id}?project=${projectId}`;
+  return `https://console.cloud.google.com/agent-platform/locations/${endpoint.region}/index-endpoints/${id}?project=${projectId}`;
 }
 
 type VectorSearchTabProps = {

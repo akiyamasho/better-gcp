@@ -56,7 +56,7 @@ function pipelineJobId(name: string): string {
 
 function consoleUrl(job: PipelineJob, projectId: string): string {
   const id = pipelineJobId(job.name);
-  return `https://console.cloud.google.com/vertex-ai/locations/${job.region}/pipelines/runs/${id}?project=${projectId}`;
+  return `https://console.cloud.google.com/agent-platform/locations/${job.region}/pipelines/runs/${id}?project=${projectId}`;
 }
 
 function logsUrl(job: PipelineJob, projectId: string): string {

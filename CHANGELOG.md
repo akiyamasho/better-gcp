@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.11.0] - 2026-06-11
+
+### Added
+- **Custom Jobs: Cancel job button in detail panel** — active jobs (QUEUED, PENDING, RUNNING) now show a "Cancel Job" button in the detail panel header for quick cancellation.
+
+### Changed
+- **GCP Console URLs updated** — all Vertex AI-related console URLs now use `/agent-platform/` instead of `/vertex-ai/` to match Google's latest UI structure.
+  - Affects: Custom Jobs, AI Pipelines, Vector Search indices and endpoints.
+
 ## [4.10.0] - 2026-04-11
 
 ### Added

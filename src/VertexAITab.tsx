@@ -46,7 +46,7 @@ function jobId(name: string): string {
 
 function consoleUrl(job: VertexAICustomJob, projectId: string): string {
   const id = jobId(job.name);
-  return `https://console.cloud.google.com/vertex-ai/locations/${job.region}/training/custom-jobs/${id}?project=${projectId}`;
+  return `https://console.cloud.google.com/agent-platform/locations/${job.region}/training/custom-jobs/${id}?project=${projectId}`;
 }
 
 function logsUrl(job: VertexAICustomJob, projectId: string): string {
@@ -424,12 +424,30 @@ const VertexAITab = () => {
           <div className="vai-detail">
             <div className="vai-detail-header">
               <h3>{detail.displayName}</h3>
-              <button
-                className="vai-detail-close"
-                onClick={() => setExpandedJob(null)}
-              >
-                &times;
-              </button>
+              <div className="vai-detail-header-actions">
+                {ACTIVE_STATES.has(detail.state) && (
+                  <button
+                    className="danger-button"
+                    onClick={async () => {
+                      const res = await (window as any).vertexai.cancelCustomJob(detail.name);
+                      if (res.ok) {
+                        setActionMsg('Requested cancellation for job.');
+                        setTimeout(fetchJobs, 1500);
+                      } else {
+                        setError(`Cancel failed: ${res.error}`);
+                      }
+                    }}
+                  >
+                    Cancel Job
+                  </button>
+                )}
+                <button
+                  className="vai-detail-close"
+                  onClick={() => setExpandedJob(null)}
+                >
+                  &times;
+                </button>
+              </div>
             </div>
 
             <div className="vai-detail-section">
