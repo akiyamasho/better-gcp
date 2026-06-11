@@ -536,12 +536,12 @@ const VertexAITab = () => {
                         {spec.containerSpec.env && spec.containerSpec.env.length > 0 && (
                           <details className="vai-env-details">
                             <summary>Environment ({spec.containerSpec.env.length})</summary>
-                            <div className="vai-detail-grid">
+                            <div className="vai-env-list">
                               {spec.containerSpec.env.map((e, ei) => (
-                                <React.Fragment key={ei}>
-                                  <span className="vai-detail-label">{e.name}</span>
-                                  <span className="vai-detail-mono">{e.value}</span>
-                                </React.Fragment>
+                                <div key={ei} className="vai-env-item">
+                                  <div className="vai-env-key">{e.name}</div>
+                                  <div className="vai-env-value">{e.value}</div>
+                                </div>
                               ))}
                             </div>
                           </details>
